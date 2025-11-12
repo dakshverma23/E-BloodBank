@@ -62,3 +62,31 @@ class DonationCamp(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.city}"
+
+
+class CampRegistration(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('cancelled', 'Cancelled'),
+        ('attended', 'Attended'),
+    )
+
+    camp = models.ForeignKey(DonationCamp, on_delete=models.CASCADE, related_name='registrations')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='camp_registrations')
+    full_name = models.CharField(max_length=200)
+    email = models.EmailField()
+    phone = models.CharField(max_length=15)
+    blood_group = models.CharField(max_length=3)
+    date_of_birth = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    notes = models.TextField(blank=True)
+    registered_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-registered_at']
+        unique_together = ('camp', 'user')  # Prevent duplicate registrations
+
+    def __str__(self):
+        return f"{self.full_name} - {self.camp.name}"

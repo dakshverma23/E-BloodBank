@@ -75,7 +75,24 @@ export default function BloodBankEdit() {
           <Form.Item name="name" label="Name" rules={[{ required: true }]}> <Input/> </Form.Item>
           <Form.Item name="registration_number" label="Registration Number" rules={[{ required: true }]}> <Input/> </Form.Item>
           <Form.Item name="email" label="Email"> <Input/> </Form.Item>
-          <Form.Item name="phone" label="Phone"> <Input/> </Form.Item>
+          <Form.Item 
+            name="phone" 
+            label="Phone" 
+            rules={[
+              { pattern: /^[0-9]{10}$/, message: 'Please enter a valid 10-digit phone number' },
+              { len: 10, message: 'Phone number must be exactly 10 digits' }
+            ]}
+          >
+            <Input 
+              placeholder="Enter 10-digit phone number" 
+              maxLength={10}
+              onChange={(e) => {
+                // Only allow digits
+                const value = e.target.value.replace(/\D/g, '')
+                form.setFieldsValue({ phone: value })
+              }}
+            />
+          </Form.Item>
           <Form.Item name="address" label="Address"> <Input.TextArea rows={2}/> </Form.Item>
           <Form.Item name="city" label="City"> <Input/> </Form.Item>
           <Form.Item name="state" label="State"> <Input/> </Form.Item>

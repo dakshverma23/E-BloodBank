@@ -17,10 +17,12 @@ export default function AppLayout({ children }) {
       { key: '/donations', label: <Link to="/donations">Transactions</Link> },
       { key: '/inventory', label: <Link to="/inventory">Inventory</Link> },
       { key: '/requests', label: <Link to="/requests">Requests</Link> },
+      { key: '/camp-registrations', label: <Link to="/camp-registrations">Camp Registrations</Link> },
       { key: '/profile', label: <Link to="/profile">Profile</Link> },
     ] : [
       { key: '/dashboard/donor', label: <Link to="/dashboard/donor">Dashboard</Link> },
       { key: '/bloodbanks', label: <Link to="/bloodbanks">Blood Banks</Link> },
+      { key: '/camps', label: <Link to="/camps">Camps</Link> },
       { key: '/donations', label: <Link to="/donations">Donations</Link> },
       { key: '/requests', label: <Link to="/requests">Requests</Link> },
       { key: '/appointments', label: <Link to="/appointments">Appointments</Link> },
@@ -82,8 +84,8 @@ export default function AppLayout({ children }) {
           </div>
         </div>
       </Header>
-      <Content style={{ padding: '24px', background: 'transparent' }}>
-        <div style={{ background: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '24px', minHeight: 'calc(100vh - 120px)' }}>
+      <Content style={{ padding: '12px', background: 'transparent' }}>
+        <div style={{ background: 'transparent', borderRadius: '0', boxShadow: 'none', padding: '0', minHeight: 'calc(100vh - 120px)' }}>
           {children}
         </div>
       </Content>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Card, Row, Col, Statistic, Space, Button, notification } from 'antd'
 import { api } from '../api/client'
-import { BankOutlined, CalendarOutlined, TeamOutlined } from '@ant-design/icons'
+import { BankOutlined, CalendarOutlined, TeamOutlined, HeartOutlined, ThunderboltOutlined, GlobalOutlined } from '@ant-design/icons'
 
 export default function DonorDashboard() {
   const [stats, setStats] = useState({ banksCount: 0, myAppointments: 0, myRequests: 0 })
@@ -41,41 +41,173 @@ export default function DonorDashboard() {
     return () => { mounted = false }
   }, [])
 
+  const statCards = [
+    {
+      title: 'Blood Banks',
+      value: stats.banksCount,
+      icon: <BankOutlined />,
+      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      iconBg: 'rgba(102, 126, 234, 0.1)',
+    },
+    {
+      title: 'My Appointments',
+      value: stats.myAppointments,
+      icon: <CalendarOutlined />,
+      gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      iconBg: 'rgba(79, 172, 254, 0.1)',
+    },
+    {
+      title: 'My Requests',
+      value: stats.myRequests,
+      icon: <ThunderboltOutlined />,
+      gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      iconBg: 'rgba(245, 87, 108, 0.1)',
+    },
+  ]
+
+  const quickActions = [
+    {
+      title: 'Request Blood',
+      icon: <HeartOutlined />,
+      href: '/requests',
+      gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+    },
+    {
+      title: 'My Donations',
+      icon: <TeamOutlined />,
+      href: '/donations',
+      gradient: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+    },
+    {
+      title: 'Browse Banks',
+      icon: <GlobalOutlined />,
+      href: '/bloodbanks',
+      gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+    },
+    {
+      title: 'Donation Camps',
+      icon: <CalendarOutlined />,
+      href: '/camps',
+      gradient: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+    },
+  ]
+
   return (
-    <div className="space-y-4">
-      <Row gutter={[16,16]}>
-        <Col xs={24} md={8}>
-          <Card className="shadow" bordered={false} loading={loading}>
-            <Space align="center">
-              <BankOutlined className="text-red-500" />
-              <Statistic title="Blood Banks" value={stats.banksCount} />
-            </Space>
-          </Card>
-        </Col>
-        <Col xs={24} md={8}>
-          <Card className="shadow" bordered={false} loading={loading}>
-            <Space align="center">
-              <CalendarOutlined className="text-blue-500" />
-              <Statistic title="My Appointments" value={stats.myAppointments} />
-            </Space>
-          </Card>
-        </Col>
-        <Col xs={24} md={8}>
-          <Card className="shadow" bordered={false} loading={loading}>
-            <Space align="center">
-              <TeamOutlined className="text-green-600" />
-              <Statistic title="My Requests" value={stats.myRequests} />
-            </Space>
-          </Card>
-        </Col>
+    <div style={{ padding: '8px 0' }}>
+      <Row gutter={[12, 12]} style={{ marginBottom: '16px' }}>
+        {statCards.map((stat, idx) => (
+          <Col xs={24} sm={12} md={8} key={idx}>
+            <Card
+              bordered={false}
+              loading={loading}
+              style={{
+                background: stat.gradient,
+                borderRadius: '12px',
+                border: 'none',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                cursor: 'pointer',
+              }}
+              bodyStyle={{ padding: '20px' }}
+              hoverable
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)'
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{
+                    fontSize: '14px',
+                    color: 'rgba(255,255,255,0.9)',
+                    marginBottom: '8px',
+                    fontWeight: 500,
+                  }}>
+                    {stat.title}
+                  </div>
+                  <Statistic
+                    value={stat.value}
+                    valueStyle={{ color: '#fff', fontSize: '32px', fontWeight: 'bold' }}
+                  />
+                </div>
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '12px',
+                  background: stat.iconBg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '24px',
+                  color: '#fff',
+                }}>
+                  {stat.icon}
+                </div>
+              </div>
+            </Card>
+          </Col>
+        ))}
       </Row>
 
-      <Card title="Quick Actions" className="shadow" bordered={false}>
-        <Space wrap>
-          <Button type="primary" href="/requests">Request Blood</Button>
-          <Button href="/donations">Add Donation</Button>
-          <Button href="/bloodbanks">Browse Blood Banks</Button>
-        </Space>
+      <Card
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ThunderboltOutlined style={{ color: '#667eea', fontSize: '20px' }} />
+            <span style={{ fontWeight: 600, fontSize: '16px' }}>Quick Actions</span>
+          </div>
+        }
+        bordered={false}
+        style={{
+          borderRadius: '12px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        }}
+        bodyStyle={{ padding: '20px' }}
+      >
+        <Row gutter={[12, 12]}>
+          {quickActions.map((action, idx) => (
+            <Col xs={24} sm={12} md={8} key={idx}>
+              <a href={action.href} style={{ textDecoration: 'none' }}>
+                <Card
+                  bordered={false}
+                  style={{
+                    background: action.gradient,
+                    borderRadius: '12px',
+                    border: 'none',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                    cursor: 'pointer',
+                    height: '100%',
+                  }}
+                  bodyStyle={{ padding: '24px', textAlign: 'center' }}
+                  hoverable
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-4px)'
+                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  <div style={{ fontSize: '32px', color: '#fff', marginBottom: '12px' }}>
+                    {action.icon}
+                  </div>
+                  <div style={{
+                    color: '#fff',
+                    fontSize: '16px',
+                    fontWeight: 600,
+                  }}>
+                    {action.title}
+                  </div>
+                </Card>
+              </a>
+            </Col>
+          ))}
+        </Row>
       </Card>
     </div>
   )

@@ -17,6 +17,16 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'phone', 'user_type', 'is_active', 'is_staff', 'is_superuser', 'password', 'profile']
         read_only_fields = ['is_staff', 'is_superuser', 'is_active']
 
+    def validate_phone(self, value):
+        """Validate that phone number is exactly 10 digits"""
+        # Remove all non-digit characters
+        phone_digits = ''.join(filter(str.isdigit, str(value)))
+        
+        if len(phone_digits) != 10:
+            raise serializers.ValidationError('Phone number must be exactly 10 digits')
+        
+        return phone_digits
+
     def create(self, validated_data):
         password = validated_data.pop('password')
         user = User(**validated_data)

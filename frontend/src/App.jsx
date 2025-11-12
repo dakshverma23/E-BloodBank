@@ -18,6 +18,8 @@ import Profile from './pages/Profile'
 import Logout from './pages/Logout'
 import Appointments from './pages/Appointments'
 import BloodBankEdit from './pages/BloodBankEdit'
+import Camps from './pages/Camps'
+import CampRegistrations from './pages/CampRegistrations'
 
 export default function App() {
   return (
@@ -112,6 +114,26 @@ export default function App() {
           <ProtectedRoute>
             <AppLayout>
               <Appointments />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/camps"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Camps />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/camp-registrations"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <CampRegistrations />
             </AppLayout>
           </ProtectedRoute>
         }
