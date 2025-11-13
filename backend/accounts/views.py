@@ -6,7 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from bloodbank.models import BloodBank
 from .models import User, UserProfile
 from .serializers import UserSerializer, UserProfileSerializer, MeSerializer
-from .google_auth import is_google_verified, clear_google_verification
+from .firebase_auth import verify_firebase_token, is_firebase_verified, clear_firebase_verification
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -24,16 +24,50 @@ class SignupView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        # Check if email is verified via Google OAuth
+        # Check if email is verified via Firebase
         email = request.data.get('email')
         phone = request.data.get('phone')
+        firebase_token = request.data.get('firebase_token')
         
-        # Check if email is verified via Google OAuth
-        if email:
-            email_normalized = email.strip().lower()
-            if not is_google_verified(email_normalized):
+        # Verify Firebase token if provided
+        if firebase_token:
+            try:
+                firebase_user = verify_firebase_token(firebase_token)
+                if firebase_user:
+                    email_from_firebase = firebase_user.get('email', '').strip().lower()
+                    phone_from_firebase = firebase_user.get('phone_number', '')
+                    
+                    # Verify email matches if provided
+                    if email:
+                        email_normalized = email.strip().lower()
+                        if email_normalized != email_from_firebase:
+                            return Response(
+                                {'email': ['Email does not match Firebase account']},
+                                status=status.HTTP_400_BAD_REQUEST
+                            )
+                        # Store Firebase verification
+                        is_firebase_verified(email_normalized, store=True)
+                    
+                    # Verify phone matches if provided
+                    if phone and phone_from_firebase:
+                        phone_normalized = ''.join(filter(str.isdigit, phone.strip()))
+                        phone_firebase_normalized = ''.join(filter(str.isdigit, phone_from_firebase))
+                        if phone_normalized != phone_firebase_normalized:
+                            return Response(
+                                {'phone': ['Phone number does not match Firebase account']},
+                                status=status.HTTP_400_BAD_REQUEST
+                            )
+            except Exception as e:
                 return Response(
-                    {'email': ['Email must be verified via Google OAuth before signup. Please sign in with Google first.']},
+                    {'error': [f'Firebase verification failed: {str(e)}']},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        elif email:
+            # If no Firebase token but email provided, check if email is verified
+            email_normalized = email.strip().lower()
+            if not is_firebase_verified(email_normalized):
+                return Response(
+                    {'email': ['Email must be verified via Firebase before signup. Please verify your email first.']},
                     status=status.HTTP_400_BAD_REQUEST
                 )
         
@@ -60,13 +94,13 @@ class SignupView(APIView):
         serializer = UserSerializer(data=data)
         if serializer.is_valid():
             user = serializer.save()
-            # Mark user as verified since email is verified via Google
+            # Mark user as verified since email/phone is verified via Firebase
             user.is_verified = True
             user.save()
             
-            # Clear Google verification after successful signup
+            # Clear Firebase verification after successful signup
             if email:
-                clear_google_verification(email)
+                clear_firebase_verification(email)
             
             # If donor user, create linked Donor profile and UserProfile
             if user.user_type == 'donor':

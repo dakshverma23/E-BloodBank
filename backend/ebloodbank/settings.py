@@ -124,7 +124,7 @@ WSGI_APPLICATION = 'ebloodbank.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=config('DATABASE_URL'),
+        default=config('DATABASE_URL', default='sqlite:///db.sqlite3'),
         conn_max_age=600
     )
 }
@@ -225,10 +225,10 @@ CACHES = {
     }
 }
 
-# Google OAuth Configuration
-# Get credentials from https://console.cloud.google.com/apis/credentials
-GOOGLE_OAUTH2_CLIENT_ID = config('GOOGLE_OAUTH2_CLIENT_ID', default='')
-GOOGLE_OAUTH2_CLIENT_SECRET = config('GOOGLE_OAUTH2_CLIENT_SECRET', default='')
+# Firebase Configuration
+# Get credentials from https://console.firebase.google.com/
+FIREBASE_PROJECT_ID = config('FIREBASE_PROJECT_ID', default='')
+FIREBASE_WEB_API_KEY = config('FIREBASE_WEB_API_KEY', default='')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
