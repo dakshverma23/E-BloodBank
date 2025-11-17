@@ -1,0 +1,48 @@
+{% extends "admin/index.html" %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard">
+    {% for app in app_list %}
+    <div class="module">
+        <h2>
+            <a href="{{ app.app_url }}" title="{% blocktrans with name=app.name %}Models in the {{ name }} application{% endblocktrans %}">
+                {{ app.name }}
+            </a>
+        </h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for model in app.models %}
+                <tr>
+                    <td>
+                        {% if model.admin_url %}
+                            <a href="{{ model.admin_url }}">{{ model.name }}</a>
+                        {% else %}
+                            {{ model.name }}
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        {% if model.add_url %}
+                            <a href="{{ model.add_url }}" class="addlink">Add</a>
+                        {% endif %}
+                        {% if model.admin_url %}
+                            <a href="{{ model.admin_url }}" class="changelink">Change</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% empty %}
+    <p>{% trans "You don't have permission to view or edit anything." %}</p>
+    {% endfor %}
+</div>
+{% endblock %}
+

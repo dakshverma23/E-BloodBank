@@ -19,8 +19,15 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse
 from django.urls import path, include
+from django.template.response import TemplateResponse
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from accounts.auth import EmailOrUsernameTokenObtainPairView
+
+# Customize admin site
+admin.site.site_header = "E-BloodBank Administration"
+admin.site.site_title = "E-BloodBank Admin"
+admin.site.index_title = "Blood Bank Management System"
+admin.site.site_url = "/"
 
 def index(_request):
     return JsonResponse({

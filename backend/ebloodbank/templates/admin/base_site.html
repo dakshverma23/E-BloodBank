@@ -1,0 +1,250 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('E-BloodBank Admin') }}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 15px 20px; margin: 0; border-radius: 8px;">
+    <a href="{% url 'admin:index' %}" style="color: white; text-decoration: none; font-weight: 600; font-size: 24px; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 28px;">🩸</span>
+        E-BloodBank Administration
+    </a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Modern Admin Styling */
+    :root {
+        --primary-color: #dc2626;
+        --primary-dark: #991b1b;
+        --secondary-color: #f3f4f6;
+        --text-color: #1f2937;
+        --border-color: #e5e7eb;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background: #f9fafb;
+        color: var(--text-color);
+    }
+
+    #header {
+        background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-bottom: none;
+        padding: 0;
+    }
+
+    #branding h1 {
+        margin: 0;
+        padding: 0;
+    }
+
+    #branding h1 a {
+        color: white !important;
+        font-weight: 600;
+        text-decoration: none;
+        transition: opacity 0.2s;
+    }
+
+    #branding h1 a:hover {
+        opacity: 0.9;
+    }
+
+    #user-tools {
+        color: white;
+        font-weight: 500;
+    }
+
+    #user-tools a {
+        color: white !important;
+        text-decoration: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: background 0.2s;
+    }
+
+    #user-tools a:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .module {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    .module h2 {
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        border-bottom: 2px solid var(--primary-color);
+        padding: 15px 20px;
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+
+    .module table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .module th {
+        background: #f9fafb;
+        padding: 12px 15px;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-color);
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .module td {
+        padding: 12px 15px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .module tr:hover {
+        background: #f9fafb;
+    }
+
+    .button, input[type=submit], .submit-row input {
+        background: var(--primary-color);
+        border: none;
+        border-radius: 6px;
+        padding: 10px 20px;
+        color: white;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+    }
+
+    .button:hover, input[type=submit]:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+    }
+
+    .button.default, input[type=submit].default {
+        background: var(--primary-color);
+    }
+
+    .addlink, .changelink, .viewlink {
+        background: var(--primary-color);
+        color: white !important;
+        padding: 6px 12px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .addlink:hover, .changelink:hover, .viewlink:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+    }
+
+    .object-tools {
+        margin-bottom: 15px;
+    }
+
+    #content {
+        padding: 30px;
+    }
+
+    .dashboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .dashboard .module {
+        margin: 0;
+    }
+
+    .submit-row {
+        background: white;
+        border-top: 2px solid var(--border-color);
+        padding: 15px 20px;
+        margin: 20px 0 0 0;
+        border-radius: 0 0 8px 8px;
+    }
+
+    .form-row {
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .form-row:last-child {
+        border-bottom: none;
+    }
+
+    input[type=text], input[type=email], input[type=password], 
+    input[type=number], select, textarea {
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+
+    input[type=text]:focus, input[type=email]:focus, 
+    input[type=password]:focus, input[type=number]:focus, 
+    select:focus, textarea:focus {
+        border-color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+    }
+
+    .messagelist {
+        margin: 20px 0;
+    }
+
+    .messagelist li {
+        padding: 15px 20px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .messagelist .success {
+        background: #d1fae5;
+        color: #065f46;
+        border-left: 4px solid var(--success-color);
+    }
+
+    .messagelist .error {
+        background: #fee2e2;
+        color: #991b1b;
+        border-left: 4px solid var(--danger-color);
+    }
+
+    .messagelist .warning {
+        background: #fef3c7;
+        color: #92400e;
+        border-left: 4px solid var(--warning-color);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        #content {
+            padding: 15px;
+        }
+
+        .dashboard {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
