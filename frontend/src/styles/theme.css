@@ -1,0 +1,229 @@
+/* Dark Mode Styles */
+:root {
+  --transition-speed: 0.3s;
+}
+
+/* Light mode default (already set via inline styles) */
+
+/* Dark mode overrides */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+/* Ant Design components dark mode overrides */
+.dark .ant-layout {
+  background: linear-gradient(to bottom, #0f172a, #1e293b) !important;
+}
+
+.dark .ant-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-card-head {
+  border-bottom-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-card-head-title {
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-table {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-table-thead > tr > th {
+  background: #334155 !important;
+  border-bottom-color: #475569 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-table-tbody > tr > td {
+  border-bottom-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-table-tbody > tr:hover > td {
+  background: #334155 !important;
+}
+
+.dark .ant-descriptions-item-label {
+  color: #cbd5e1 !important;
+}
+
+.dark .ant-descriptions-item-content {
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-input,
+.dark .ant-input-number,
+.dark .ant-select-selector,
+.dark .ant-picker {
+  background: #334155 !important;
+  border-color: #475569 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-input:focus,
+.dark .ant-input-number:focus,
+.dark .ant-select-focused .ant-select-selector,
+.dark .ant-picker:focus {
+  border-color: #818cf8 !important;
+  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2) !important;
+}
+
+.dark .ant-input::placeholder {
+  color: #64748b !important;
+}
+
+.dark .ant-select-selection-placeholder {
+  color: #64748b !important;
+}
+
+.dark .ant-menu {
+  background: transparent !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-menu-item {
+  color: #cbd5e1 !important;
+}
+
+.dark .ant-menu-item:hover,
+.dark .ant-menu-item-selected {
+  color: #818cf8 !important;
+}
+
+.dark .ant-menu-item-selected::after {
+  border-bottom-color: #818cf8 !important;
+}
+
+.dark .ant-modal-content {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+.dark .ant-modal-header {
+  background: #1e293b !important;
+  border-bottom-color: #334155 !important;
+}
+
+.dark .ant-modal-title {
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-modal-close {
+  color: #cbd5e1 !important;
+}
+
+.dark .ant-modal-close:hover {
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-dropdown {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+.dark .ant-dropdown-menu {
+  background: #1e293b !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .ant-dropdown-menu-item {
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-dropdown-menu-item:hover {
+  background: #334155 !important;
+  color: #818cf8 !important;
+}
+
+.dark .ant-empty-description {
+  color: #cbd5e1 !important;
+}
+
+.dark .ant-pagination-item {
+  background: #334155 !important;
+  border-color: #475569 !important;
+}
+
+.dark .ant-pagination-item a {
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-pagination-item:hover {
+  border-color: #818cf8 !important;
+}
+
+.dark .ant-pagination-item:hover a {
+  color: #818cf8 !important;
+}
+
+.dark .ant-pagination-item-active {
+  background: #818cf8 !important;
+  border-color: #818cf8 !important;
+}
+
+.dark .ant-pagination-item-active a {
+  color: #fff !important;
+}
+
+.dark .ant-pagination-prev,
+.dark .ant-pagination-next {
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-pagination-prev:hover,
+.dark .ant-pagination-next:hover {
+  border-color: #818cf8 !important;
+  color: #818cf8 !important;
+}
+
+.dark .ant-select-dropdown {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+.dark .ant-select-item {
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-select-item:hover,
+.dark .ant-select-item-option-selected {
+  background: #334155 !important;
+  color: #818cf8 !important;
+}
+
+.dark .ant-picker-dropdown {
+  background: #1e293b !important;
+}
+
+.dark .ant-picker-panel {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark .ant-picker-calendar-date {
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-picker-calendar-date:hover {
+  background: #334155 !important;
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color var(--transition-speed) ease,
+              color var(--transition-speed) ease,
+              border-color var(--transition-speed) ease;
+}
+

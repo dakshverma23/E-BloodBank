@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Button, Modal, Form, DatePicker, Input, message, Table, Pagination, Card, Space, Typography, Tag, Descriptions, Divider, Input as AntInput, Empty, Spin } from 'antd'
-import { SearchOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, CalendarOutlined } from '@ant-design/icons'
+import { Button, Modal, Form, DatePicker, Input, message, Table, Pagination, Card, Space, Typography, Tag, Descriptions, Divider, Input as AntInput, Empty, Spin, Popconfirm } from 'antd'
+import { SearchOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, CalendarOutlined, UserOutlined } from '@ant-design/icons'
 import ListPage from '../components/ListPage'
 import { api } from '../api/client'
 import useMe from '../hooks/useMe'
@@ -29,6 +29,11 @@ export default function Appointments() {
   const [submitting, setSubmitting] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   
+  // Appointment detail modal (for blood banks)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [selectedAppointment, setSelectedAppointment] = useState(null)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
+  
   const { me } = useMe()
 
   // Fetch appointments
@@ -52,7 +57,11 @@ export default function Appointments() {
   const fetchBloodBanks = useCallback(async (search = '') => {
     setBloodBanksLoading(true)
     try {
-      const params = { page_size: 100 } // Get more results for search
+      const params = { 
+        page_size: 100,
+        status: 'approved',  // Only fetch approved blood banks
+        is_operational: 'true'  // Only fetch operational blood banks
+      } // Get more results for search
       if (search && search.trim()) {
         params.search = search.trim()
       }
@@ -66,19 +75,19 @@ export default function Appointments() {
       const banks = data.results || data || []
       console.log('Total banks received:', banks.length)
       
-      // Client-side filter: prefer approved and operational, but show others if none found
+      // Client-side filter: ONLY show approved and operational banks
       let filtered = Array.isArray(banks) ? banks.filter(bank => {
-        // Show approved banks, or operational banks, or all if no approved ones exist
-        return bank.status === 'approved' || bank.is_operational === true || bank.is_operational !== false
+        // Only show approved and operational banks
+        return bank.status === 'approved' && bank.is_operational === true
       }) : []
       
-      // If no approved banks found, show all banks (for testing/debugging)
+      // If no approved banks found, show empty list (don't show pending/rejected banks)
       if (filtered.length === 0 && banks.length > 0) {
-        console.warn('No approved banks found, showing all banks')
-        filtered = banks
+        console.warn('No approved blood banks found. Only approved blood banks can accept appointments.')
+        message.warning('No approved blood banks available. Please contact an administrator to approve blood banks.')
       }
       
-      console.log('Filtered blood banks:', filtered.length)
+      console.log('Filtered blood banks (approved only):', filtered.length)
       setBloodBanks(filtered)
     } catch (e) {
       console.error('Failed to load blood banks:', e)
@@ -146,21 +155,32 @@ export default function Appointments() {
       return
     }
 
+    // Validate appointment date
+    if (!values.appointment_date) {
+      message.error('Please select an appointment date')
+      return
+    }
+
     setSubmitting(true)
     try {
       const payload = {
         bloodbank: selectedBank.id,
-        appointment_date: values.appointment_date ? values.appointment_date.format('YYYY-MM-DD') : undefined,
+        appointment_date: values.appointment_date.format('YYYY-MM-DD'),
         notes: values.notes ? values.notes.trim() : '',
       }
 
-      await api.post('/api/donors/appointments/', payload)
+      console.log('Submitting appointment payload:', payload)
+      const response = await api.post('/api/donors/appointments/', payload)
+      console.log('Appointment created successfully:', response.data)
       message.success('Appointment booked successfully!')
       setAppointmentModalOpen(false)
       appointmentForm.resetFields()
       setSelectedBank(null)
       setRefreshKey(prev => prev + 1)
+      // Refresh appointments list by updating refreshKey which triggers fetchAppointments via useEffect
     } catch (e) {
+      console.error('Appointment booking error:', e)
+      console.error('Error response:', e?.response?.data)
       const resp = e?.response?.data
       if (resp && typeof resp === 'object') {
         const fieldErrors = Object.entries(resp).map(([name, val]) => ({
@@ -169,27 +189,58 @@ export default function Appointments() {
         }))
         if (fieldErrors.length) {
           appointmentForm.setFields(fieldErrors)
-          message.error('Please correct the highlighted fields')
+          const errorMessage = fieldErrors.map(fe => `${fe.name}: ${fe.errors[0]}`).join(', ')
+          message.error(`Please correct the highlighted fields: ${errorMessage}`)
         } else {
-          message.error('Failed to book appointment')
+          const errorMsg = resp.error || resp.detail || 'Failed to book appointment'
+          message.error(errorMsg)
         }
       } else {
-        message.error('Failed to book appointment')
+        const errorMsg = e?.response?.data?.error || e?.response?.data?.detail || e?.message || 'Failed to book appointment'
+        message.error(errorMsg)
       }
     } finally {
       setSubmitting(false)
     }
   }
 
-  const appointmentColumns = [
+  // Handle appointment status update
+  const handleUpdateStatus = useCallback(async (appointmentId, action) => {
+    setUpdatingStatus(true)
+    try {
+      const url = `/api/donors/appointments/${appointmentId}/${action}/`
+      await api.post(url)
+      message.success(`Appointment ${action}ed successfully!`)
+      setRefreshKey(prev => prev + 1)
+      if (detailModalOpen && selectedAppointment?.id === appointmentId) {
+        // Refresh selected appointment
+        const { data } = await api.get(`/api/donors/appointments/${appointmentId}/`)
+        setSelectedAppointment(data)
+      }
+      fetchAppointments()
+    } catch (e) {
+      const errorMsg = e?.response?.data?.error || e?.response?.data?.detail || `Failed to ${action} appointment`
+      message.error(errorMsg)
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }, [detailModalOpen, selectedAppointment, fetchAppointments])
+
+  // Handle view appointment details (for blood banks)
+  const handleViewDetails = useCallback(async (appointment) => {
+    setSelectedAppointment(appointment)
+    setDetailModalOpen(true)
+  }, [])
+
+  const appointmentColumns = me?.user_type === 'bloodbank' ? [
     {
-      title: 'Blood Bank',
-      dataIndex: ['bloodbank', 'name'],
+      title: 'Donor',
+      dataIndex: 'user_username',
       render: (_, r) => (
         <div>
-          <Text strong>{r.bloodbank?.name || 'N/A'}</Text>
-          {r.bloodbank?.city && (
-            <div><Text type="secondary" style={{ fontSize: '12px' }}>{r.bloodbank.city}</Text></div>
+          <Text strong><UserOutlined /> {r.user_username || r.user?.username || 'N/A'}</Text>
+          {r.user_email && (
+            <div><Text type="secondary" style={{ fontSize: '12px' }}>{r.user_email}</Text></div>
           )}
         </div>
       ),
@@ -205,8 +256,60 @@ export default function Appointments() {
       render: (status) => {
         const statusConfig = {
           pending: { color: 'gold', text: 'Pending' },
-          confirmed: { color: 'green', text: 'Confirmed' },
-          cancelled: { color: 'red', text: 'Cancelled' },
+          approved: { color: 'green', text: 'Approved' },
+          rejected: { color: 'red', text: 'Rejected' },
+          completed: { color: 'blue', text: 'Completed' },
+        }
+        const config = statusConfig[status] || { color: 'default', text: status }
+        return <Tag color={config.color}>{config.text}</Tag>
+      },
+    },
+    {
+      title: 'Notes',
+      dataIndex: 'notes',
+      render: (notes) => notes || '-',
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewDetails(record)}
+          >
+            View Details
+          </Button>
+        </Space>
+      ),
+    },
+  ] : [
+    {
+      title: 'Blood Bank',
+      dataIndex: ['bloodbank', 'name'],
+      render: (_, r) => (
+        <div>
+          <Text strong>{r.bloodbank_name || r.bloodbank?.name || 'N/A'}</Text>
+          {r.bloodbank_city && (
+            <div><Text type="secondary" style={{ fontSize: '12px' }}>{r.bloodbank_city}</Text></div>
+          )}
+        </div>
+      ),
+    },
+    {
+      title: 'Date',
+      dataIndex: 'appointment_date',
+      render: (date) => date ? dayjs(date).format('MMMM DD, YYYY') : 'N/A',
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      render: (status) => {
+        const statusConfig = {
+          pending: { color: 'gold', text: 'Pending' },
+          approved: { color: 'green', text: 'Approved' },
+          rejected: { color: 'red', text: 'Rejected' },
           completed: { color: 'blue', text: 'Completed' },
         }
         const config = statusConfig[status] || { color: 'default', text: status }
@@ -350,7 +453,7 @@ export default function Appointments() {
       )}
 
       {/* Appointments List */}
-      <Card title="My Appointments">
+      <Card title={me?.user_type === 'bloodbank' ? 'Appointments for My Blood Bank' : 'My Appointments'}>
         <Table
           rowKey={(r) => r.id}
           columns={appointmentColumns}
@@ -578,6 +681,183 @@ export default function Appointments() {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* Appointment Detail Modal (for blood banks) */}
+      {me?.user_type === 'bloodbank' && (
+        <Modal
+          title={
+            <Space>
+              <CalendarOutlined />
+              <span>Appointment Details</span>
+            </Space>
+          }
+          open={detailModalOpen}
+          onCancel={() => {
+            setDetailModalOpen(false)
+            setSelectedAppointment(null)
+          }}
+          footer={null}
+          width={800}
+        >
+          {selectedAppointment && (
+            <div>
+              <Descriptions bordered column={1} size="small">
+                <Descriptions.Item label="Appointment ID">
+                  <Text strong>#{selectedAppointment.id}</Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Donor Information">
+                  <Space direction="vertical" size="small">
+                    <Text strong>{selectedAppointment.user_username || selectedAppointment.user?.username || 'N/A'}</Text>
+                    {selectedAppointment.user_email && (
+                      <Text>
+                        <MailOutlined /> {selectedAppointment.user_email}
+                      </Text>
+                    )}
+                    {selectedAppointment.user_phone && (
+                      <Text>
+                        <PhoneOutlined /> {selectedAppointment.user_phone}
+                      </Text>
+                    )}
+                  </Space>
+                </Descriptions.Item>
+                <Descriptions.Item label="Appointment Date">
+                  <Text>
+                    <CalendarOutlined /> {selectedAppointment.appointment_date ? dayjs(selectedAppointment.appointment_date).format('MMMM DD, YYYY') : 'N/A'}
+                  </Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Status">
+                  {(() => {
+                    const statusConfig = {
+                      pending: { color: 'gold', text: 'Pending' },
+                      approved: { color: 'green', text: 'Approved' },
+                      rejected: { color: 'red', text: 'Rejected' },
+                      completed: { color: 'blue', text: 'Completed' },
+                    }
+                    const config = statusConfig[selectedAppointment.status] || { color: 'default', text: selectedAppointment.status }
+                    return <Tag color={config.color}>{config.text}</Tag>
+                  })()}
+                </Descriptions.Item>
+                <Descriptions.Item label="Blood Bank">
+                  <Space direction="vertical" size="small">
+                    <Text strong>{selectedAppointment.bloodbank_name || selectedAppointment.bloodbank?.name || 'N/A'}</Text>
+                    {selectedAppointment.bloodbank_address && (
+                      <Text type="secondary">{selectedAppointment.bloodbank_address}</Text>
+                    )}
+                    {selectedAppointment.bloodbank_city && (
+                      <Text type="secondary">
+                        <EnvironmentOutlined /> {selectedAppointment.bloodbank_city}
+                      </Text>
+                    )}
+                    {selectedAppointment.bloodbank_phone && (
+                      <Text>
+                        <PhoneOutlined /> {selectedAppointment.bloodbank_phone}
+                      </Text>
+                    )}
+                  </Space>
+                </Descriptions.Item>
+                <Descriptions.Item label="Notes">
+                  <Text>{selectedAppointment.notes || 'No notes provided'}</Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Created At">
+                  <Text type="secondary">
+                    {selectedAppointment.created_at ? dayjs(selectedAppointment.created_at).format('MMMM DD, YYYY HH:mm') : 'N/A'}
+                  </Text>
+                </Descriptions.Item>
+                {selectedAppointment.updated_at && (
+                  <Descriptions.Item label="Last Updated">
+                    <Text type="secondary">
+                      {dayjs(selectedAppointment.updated_at).format('MMMM DD, YYYY HH:mm')}
+                    </Text>
+                  </Descriptions.Item>
+                )}
+              </Descriptions>
+
+              <Divider />
+
+              {/* Status Update Actions (for blood banks) */}
+              <div style={{ marginTop: '16px' }}>
+                <Text strong style={{ display: 'block', marginBottom: '12px' }}>Update Status:</Text>
+                <Space wrap>
+                  {selectedAppointment.status === 'pending' && (
+                    <>
+                      <Popconfirm
+                        title="Approve this appointment?"
+                        description="This will approve the appointment request."
+                        onConfirm={() => handleUpdateStatus(selectedAppointment.id, 'approve')}
+                        okText="Yes"
+                        cancelText="No"
+                      >
+                        <Button
+                          type="primary"
+                          icon={<CheckCircleOutlined />}
+                          loading={updatingStatus}
+                          style={{ background: '#52c41a', borderColor: '#52c41a' }}
+                        >
+                          Approve
+                        </Button>
+                      </Popconfirm>
+                      <Popconfirm
+                        title="Reject this appointment?"
+                        description="This will reject the appointment request."
+                        onConfirm={() => handleUpdateStatus(selectedAppointment.id, 'reject')}
+                        okText="Yes"
+                        cancelText="No"
+                      >
+                        <Button
+                          danger
+                          icon={<CloseCircleOutlined />}
+                          loading={updatingStatus}
+                        >
+                          Reject
+                        </Button>
+                      </Popconfirm>
+                    </>
+                  )}
+                  {selectedAppointment.status === 'rejected' && (
+                    <Popconfirm
+                      title="Approve this appointment?"
+                      description="This will override the rejection and approve the appointment."
+                      onConfirm={() => handleUpdateStatus(selectedAppointment.id, 'approve')}
+                      okText="Yes"
+                      cancelText="No"
+                    >
+                      <Button
+                        type="primary"
+                        icon={<CheckCircleOutlined />}
+                        loading={updatingStatus}
+                        style={{ background: '#52c41a', borderColor: '#52c41a' }}
+                      >
+                        Approve (Override Rejection)
+                      </Button>
+                    </Popconfirm>
+                  )}
+                  {selectedAppointment.status === 'approved' && (
+                    <Popconfirm
+                      title="Mark appointment as completed?"
+                      description="This will mark the appointment as completed."
+                      onConfirm={() => handleUpdateStatus(selectedAppointment.id, 'complete')}
+                      okText="Yes"
+                      cancelText="No"
+                    >
+                      <Button
+                        type="primary"
+                        icon={<CheckCircleOutlined />}
+                        loading={updatingStatus}
+                        style={{ background: '#1890ff' }}
+                      >
+                        Mark as Completed
+                      </Button>
+                    </Popconfirm>
+                  )}
+                  {(selectedAppointment.status === 'completed') && (
+                    <Text type="secondary">This appointment has been completed.</Text>
+                  )}
+                </Space>
+              </div>
+            </div>
+          )}
+        </Modal>
+      )}
     </div>
   )
 }

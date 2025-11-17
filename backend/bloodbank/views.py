@@ -25,7 +25,9 @@ class BloodBankViewSet(viewsets.ModelViewSet):
                     registration_number=f"REG-{u.id}",
                     email=u.email or '',
                     phone=u.phone or '',
-                    address='', city='', state='', pincode=''
+                    address='', city='', state='', pincode='',
+                    status='approved',
+                    is_operational=True
                 )
         return super().list(request, *args, **kwargs)
 

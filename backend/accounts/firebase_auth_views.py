@@ -93,8 +93,8 @@ class FirebaseAuthCheckView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        email = request.data.get('email')
-        phone = request.data.get('phone')
+        email = request.data.get('email', '').strip()
+        phone = request.data.get('phone', '').strip()
         
         if not email and not phone:
             return Response(
@@ -102,7 +102,12 @@ class FirebaseAuthCheckView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        identifier = email.strip().lower() if email else ''.join(filter(str.isdigit, phone.strip()))
+        # Prefer email if provided, otherwise use phone
+        if email:
+            identifier = email.lower()
+        else:
+            identifier = ''.join(filter(str.isdigit, phone))
+        
         verified = is_firebase_verified(identifier)
         
         return Response({

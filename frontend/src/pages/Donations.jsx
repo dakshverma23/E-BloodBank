@@ -343,7 +343,7 @@ export default function Donations() {
   const createFields = me?.user_type === 'bloodbank' ? [] : [] // Using custom form instead
 
   return (
-    <div>
+    <div style={{ padding: '8px 0' }}>
       {me?.user_type === 'bloodbank' ? (
         <ListPage 
           title="Donations" 

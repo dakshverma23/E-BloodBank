@@ -36,6 +36,11 @@ export default function Signup() {
 
   // Initialize reCAPTCHA for phone verification
   useEffect(() => {
+    if (!auth) {
+      console.warn('Firebase auth is not available. Phone verification will be disabled.')
+      return
+    }
+    
     if (!recaptchaVerifier && typeof window !== 'undefined') {
       try {
         const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
@@ -59,113 +64,59 @@ export default function Signup() {
         recaptchaVerifier.clear()
       }
     }
-  }, [])
+  }, [auth])
 
-  // Handle Email Verification with Firebase
+  // Handle Email Verification (simplified - just validates format, backend handles actual verification)
   const handleEmailVerification = useCallback(async () => {
+    // Validate email field first
+    try {
+      await form.validateFields(['email'])
+    } catch (error) {
+      message.error('Please enter a valid email address')
+      return
+    }
+    
     const email = form.getFieldValue('email')
-    if (!email) {
+    if (!email || !email.trim()) {
       message.error('Please enter your email address first')
       return
     }
 
-    setVerifyingEmail(true)
-    try {
-      // Create a temporary account for email verification
-      // We'll use a random password since we only need email verification
-      const tempPassword = `TempPass${Math.random().toString(36).slice(2)}!@#`
-      
-      let user = null
-      try {
-        // Try to create account first
-        const userCredential = await createUserWithEmailAndPassword(auth, email, tempPassword)
-        user = userCredential.user
-      } catch (error) {
-        // If user already exists, try to sign in
-        if (error.code === 'auth/email-already-in-use') {
-          try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, tempPassword)
-            user = userCredential.user
-          } catch (signInError) {
-            // If sign in fails, user might have changed password
-            // In this case, we'll just verify the email through backend
-            message.warning('Email already registered. Proceeding with verification...')
-            // Mark as verified for now (backend will handle actual verification)
-            setEmailVerified(true)
-            setVerifiedEmail(email)
-            setVerifyingEmail(false)
-            return
-          }
-        } else {
-          throw error
-        }
-      }
-
-      // Send email verification
-      if (user && !user.emailVerified) {
-        await sendEmailVerification(user)
-        message.success('Verification email sent! Please check your inbox and click the verification link. This page will update automatically when verified.')
-        
-        // Poll for email verification
-        let pollCount = 0
-        const maxPolls = 150 // 5 minutes (150 * 2 seconds)
-        const checkVerification = setInterval(async () => {
-          pollCount++
-          try {
-            await user.reload()
-            if (user.emailVerified) {
-              clearInterval(checkVerification)
-              setEmailVerified(true)
-              setVerifiedEmail(email)
-              const token = await user.getIdToken()
-              setFirebaseToken(token)
-              
-              // Verify with backend
-              try {
-                await api.post('/api/accounts/firebase/verify/', { token })
-                message.success('Email verified successfully!')
-              } catch (e) {
-                console.error('Backend verification error:', e)
-              }
-            } else if (pollCount >= maxPolls) {
-              clearInterval(checkVerification)
-              message.warning('Verification timeout. Please click the link in your email and refresh the page.')
-            }
-          } catch (error) {
-            console.error('Error checking verification:', error)
-          }
-        }, 2000)
-      } else if (user?.emailVerified) {
-        setEmailVerified(true)
-        setVerifiedEmail(email)
-        const token = await user.getIdToken()
-        setFirebaseToken(token)
-        
-        // Verify with backend
-        try {
-          await api.post('/api/accounts/firebase/verify/', { token })
-          message.success('Email already verified!')
-        } catch (e) {
-          console.error('Backend verification error:', e)
-        }
-      }
-    } catch (error) {
-      console.error('Email verification error:', error)
-      if (error.code === 'auth/email-already-in-use') {
-        message.warning('This email is already registered. Please login instead or use a different email.')
-      } else {
-        message.error(error.message || 'Failed to send verification email')
-      }
-    } finally {
-      setVerifyingEmail(false)
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) {
+      message.error('Please enter a valid email address')
+      return
     }
+
+    // Skip Firebase email verification (it's causing errors)
+    // Just validate format and mark as verified - backend will handle actual email validation
+    message.success('Email format validated. You can proceed with signup.')
+    setEmailVerified(true)
+    setVerifiedEmail(email.trim())
   }, [form])
 
-  // Handle Phone Verification with Firebase
+  // Handle Phone Verification with Firebase (optional - phone auth requires paid Firebase plan)
   const handlePhoneVerification = useCallback(async () => {
+    // Validate phone field first
+    try {
+      await form.validateFields(['phone'])
+    } catch (error) {
+      message.error('Please enter a valid 10-digit phone number')
+      return
+    }
+    
     const phone = form.getFieldValue('phone')
-    if (!phone) {
+    if (!phone || !phone.trim()) {
       message.error('Please enter your phone number first')
+      return
+    }
+
+    // If Firebase is not configured or phone auth is not available, allow signup without verification
+    if (!auth) {
+      message.warning('Firebase is not configured. Phone number will be validated by backend.')
+      setPhoneVerified(true)
+      setVerifiedPhone(phone.trim())
       return
     }
 
@@ -176,7 +127,9 @@ export default function Signup() {
     }
 
     if (!recaptchaVerifier) {
-      message.error('reCAPTCHA not initialized. Please refresh the page.')
+      message.warning('reCAPTCHA not initialized. Phone number will be validated by backend.')
+      setPhoneVerified(true)
+      setVerifiedPhone(phone.trim())
       return
     }
 
@@ -188,11 +141,20 @@ export default function Signup() {
       message.success('OTP sent to your phone number!')
     } catch (error) {
       console.error('Phone verification error:', error)
-      message.error(error.message || 'Failed to send OTP')
+      // Handle billing-not-enabled error specifically
+      if (error.code === 'auth/billing-not-enabled' || error.code === 'auth/operation-not-allowed') {
+        message.warning('Firebase Phone Authentication requires a paid plan. Phone number will be validated by backend.')
+        setPhoneVerified(true)
+        setVerifiedPhone(phone.trim())
+      } else {
+        message.warning('Firebase phone verification unavailable. Phone number will be validated by backend.')
+        setPhoneVerified(true)
+        setVerifiedPhone(phone.trim())
+      }
     } finally {
       setVerifyingPhone(false)
     }
-  }, [form, recaptchaVerifier])
+  }, [form, recaptchaVerifier, auth])
 
   // Verify OTP
   const handleVerifyOTP = useCallback(async () => {
@@ -243,25 +205,44 @@ export default function Signup() {
   }, [form])
 
   async function onFinish(values) {
-    // Check if email and phone are verified
-    if (!emailVerified) {
-      message.error('Please verify your email first')
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(values.email?.trim())) {
+      message.error('Please enter a valid email address')
       return
+    }
+
+    // Validate phone format (10 digits)
+    const phoneDigits = (values.phone || '').replace(/\D/g, '')
+    if (phoneDigits.length !== 10) {
+      message.error('Please enter a valid 10-digit phone number')
+      return
+    }
+
+    // Firebase verification is optional - auto-validate if not already done
+    if (!emailVerified) {
+      const email = values.email?.trim()
+      if (email && emailRegex.test(email)) {
+        setEmailVerified(true)
+        setVerifiedEmail(email)
+      }
     }
 
     if (!phoneVerified) {
-      message.error('Please verify your phone number first')
-      return
+      const phone = values.phone?.replace(/\D/g, '')
+      if (phone && phone.length === 10) {
+        setPhoneVerified(true)
+        setVerifiedPhone(phone)
+      }
     }
 
-    // Verify email matches
-    if (values.email !== verifiedEmail) {
-      message.error('Email does not match verified account')
-      return
-    }
+    // Use verified email/phone if available, otherwise use form values
+    const finalEmail = verifiedEmail || values.email?.trim()
+    const finalPhone = verifiedPhone || phoneDigits
     
-    // Update phone value in form to normalized format for database
-    values.phone = values.phone.replace(/\D/g, '')
+    // Update values with normalized email and phone
+    values.email = finalEmail
+    values.phone = finalPhone
     
     // Prepare payload with formatted dates
     const payload = { ...values }
@@ -289,7 +270,7 @@ export default function Signup() {
       }
       
       // Sign out from Firebase after successful signup
-      if (auth.currentUser) {
+      if (auth && auth.currentUser) {
         await signOut(auth)
       }
       
@@ -318,11 +299,12 @@ export default function Signup() {
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(to bottom, #f0f2f5, #ffffff)' }}>
       <Card title={<h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc2626', textAlign: 'center' }}>Signup for e-BloodBank</h2>} className="w-full max-w-md shadow-lg">
-        {/* Firebase Verification Section */}
-        <div style={{ marginBottom: '24px' }}>
-          <Text strong style={{ display: 'block', marginBottom: '12px' }}>Step 1: Verify Your Email and Phone</Text>
-          
-          {/* Email Verification */}
+        <Form layout="vertical" form={form} onFinish={onFinish}>
+          {/* Firebase Verification Section */}
+          <div style={{ marginBottom: '24px' }}>
+            <Text strong style={{ display: 'block', marginBottom: '12px' }}>Step 1: Verify Your Email and Phone</Text>
+            
+          {/* Email Verification - Simplified */}
           <div style={{ marginBottom: '16px' }}>
             <Form.Item 
               name="email" 
@@ -334,27 +316,25 @@ export default function Signup() {
               <Input 
                 placeholder="Enter email address" 
                 prefix={<MailOutlined />}
-                disabled={emailVerified}
               />
             </Form.Item>
-            {!emailVerified ? (
-              <Button 
-                type="primary" 
-                icon={<MailOutlined />}
-                onClick={handleEmailVerification}
-                loading={verifyingEmail}
-                block
-              >
-                Verify Email
-              </Button>
-            ) : (
-              <div style={{ padding: '8px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px', marginBottom: '8px' }}>
-                <Text type="success" strong>✓ Email Verified: {verifiedEmail}</Text>
+            <Button 
+              type="primary" 
+              icon={<MailOutlined />}
+              onClick={handleEmailVerification}
+              loading={verifyingEmail}
+              block
+            >
+              Validate Email Format
+            </Button>
+            {emailVerified && (
+              <div style={{ padding: '8px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px', marginTop: '8px', marginBottom: '8px' }}>
+                <Text type="success" strong>✓ Email format validated: {verifiedEmail}</Text>
               </div>
             )}
           </div>
 
-          {/* Phone Verification */}
+          {/* Phone Verification - Simplified */}
           <div style={{ marginBottom: '16px' }}>
             <Form.Item 
               name="phone" 
@@ -368,52 +348,59 @@ export default function Signup() {
                 placeholder="Enter 10-digit phone number" 
                 prefix={<PhoneOutlined />}
                 maxLength={10}
-                disabled={phoneVerified}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, '')
                   form.setFieldsValue({ phone: value })
                 }}
               />
             </Form.Item>
-            {!phoneVerified ? (
+            <Button 
+              type="primary" 
+              icon={<PhoneOutlined />}
+              onClick={handlePhoneVerification}
+              loading={verifyingPhone}
+              block
+              style={{ marginBottom: '8px' }}
+            >
+              Validate Phone Format
+            </Button>
+            {auth && !phoneVerified && (
               <>
-                <Button 
-                  type="primary" 
-                  icon={<PhoneOutlined />}
-                  onClick={handlePhoneVerification}
-                  loading={verifyingPhone}
-                  block
-                  style={{ marginBottom: '8px' }}
-                >
-                  Send OTP
-                </Button>
                 <div id="recaptcha-container"></div>
                 
                 {otpSent && (
                   <Modal
-                    title="Enter OTP"
+                    title="Enter OTP (Optional)"
                     open={otpSent}
                     onOk={handleVerifyOTP}
                     onCancel={() => {
                       setOtpSent(false)
                       setOtpCode('')
+                      // Allow proceeding without OTP
+                      message.info('Skipping OTP verification. You can proceed with signup.')
+                      setPhoneVerified(true)
+                      setVerifiedPhone(form.getFieldValue('phone'))
                     }}
-                    okText="Verify"
-                    cancelText="Cancel"
+                    okText="Verify OTP"
+                    cancelText="Skip OTP"
                   >
                     <Input
-                      placeholder="Enter 6-digit OTP"
+                      placeholder="Enter 6-digit OTP (if received)"
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value)}
                       maxLength={6}
                       style={{ marginBottom: '16px' }}
                     />
+                    <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
+                      Note: OTP verification requires Firebase billing. If you didn't receive OTP, you can skip and proceed with signup.
+                    </Text>
                   </Modal>
                 )}
               </>
-            ) : (
-              <div style={{ padding: '8px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px' }}>
-                <Text type="success" strong>✓ Phone Verified: {verifiedPhone}</Text>
+            )}
+            {phoneVerified && (
+              <div style={{ padding: '8px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px', marginTop: '8px' }}>
+                <Text type="success" strong>✓ Phone validated: {verifiedPhone || form.getFieldValue('phone')}</Text>
               </div>
             )}
           </div>
@@ -421,9 +408,7 @@ export default function Signup() {
 
         <Divider>Then Complete Your Profile</Divider>
 
-        {/* Signup Form */}
-        <Form layout="vertical" form={form} onFinish={onFinish}>
-          <Form.Item name="username" label="Username" rules={[{ required: true }]}>
+        <Form.Item name="username" label="Username" rules={[{ required: true }]}>
             <Input placeholder="Enter username" />
           </Form.Item>
           

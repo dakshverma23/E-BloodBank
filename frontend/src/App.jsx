@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { ThemeProvider } from './contexts/ThemeContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppLayout from './components/AppLayout'
 import Login from './pages/Login'
@@ -20,10 +21,12 @@ import Appointments from './pages/Appointments'
 import BloodBankEdit from './pages/BloodBankEdit'
 import Camps from './pages/Camps'
 import CampRegistrations from './pages/CampRegistrations'
+import './styles/theme.css'
 
 export default function App() {
   return (
-    <Routes>
+    <ThemeProvider>
+      <Routes>
       <Route path="/home" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
@@ -159,7 +162,8 @@ export default function App() {
         }
       />
       <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+      </Routes>
+    </ThemeProvider>
   )
 }
 

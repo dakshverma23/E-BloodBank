@@ -98,7 +98,7 @@ export default function DonorDashboard() {
         {statCards.map((stat, idx) => (
           <Col xs={24} sm={12} md={8} key={idx}>
             <Card
-              bordered={false}
+              variant="borderless"
               loading={loading}
               style={{
                 background: stat.gradient,
@@ -108,7 +108,7 @@ export default function DonorDashboard() {
                 transition: 'transform 0.3s ease, box-shadow 0.3s ease',
                 cursor: 'pointer',
               }}
-              bodyStyle={{ padding: '20px' }}
+              styles={{ body: { padding: '20px' } }}
               hoverable
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-4px)'
@@ -160,19 +160,19 @@ export default function DonorDashboard() {
             <span style={{ fontWeight: 600, fontSize: '16px' }}>Quick Actions</span>
           </div>
         }
-        bordered={false}
+        variant="borderless"
         style={{
           borderRadius: '12px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         }}
-        bodyStyle={{ padding: '20px' }}
+        styles={{ body: { padding: '20px' } }}
       >
         <Row gutter={[12, 12]}>
           {quickActions.map((action, idx) => (
             <Col xs={24} sm={12} md={8} key={idx}>
               <a href={action.href} style={{ textDecoration: 'none' }}>
                 <Card
-                  bordered={false}
+                  variant="borderless"
                   style={{
                     background: action.gradient,
                     borderRadius: '12px',
@@ -182,7 +182,7 @@ export default function DonorDashboard() {
                     cursor: 'pointer',
                     height: '100%',
                   }}
-                  bodyStyle={{ padding: '24px', textAlign: 'center' }}
+                  styles={{ body: { padding: '24px', textAlign: 'center' } }}
                   hoverable
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-4px)'

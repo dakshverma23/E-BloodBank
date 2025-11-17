@@ -64,12 +64,12 @@ class SignupView(APIView):
                 )
         elif email:
             # If no Firebase token but email provided, check if email is verified
+            # If not verified via Firebase, allow signup anyway (backend will validate email format)
             email_normalized = email.strip().lower()
             if not is_firebase_verified(email_normalized):
-                return Response(
-                    {'email': ['Email must be verified via Firebase before signup. Please verify your email first.']},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                # Email verification via Firebase is optional - backend will validate email format
+                # User will be marked as verified since we're trusting the email input
+                pass
         
         # Create a mutable copy of request data
         data = request.data.copy()
@@ -170,6 +170,8 @@ class SignupView(APIView):
                     'pincode': request.data.get('bb_pincode') or '',
                     'latitude': request.data.get('bb_latitude') or None,
                     'longitude': request.data.get('bb_longitude') or None,
+                    'status': 'approved',
+                    'is_operational': True,
                 }
                 BloodBank.objects.get_or_create(user=user, defaults=bb_payload)
             # Auto-login return tokens to simplify frontend

@@ -101,29 +101,67 @@ class AppointmentSerializer(serializers.ModelSerializer):
     bloodbank_name = serializers.CharField(source='bloodbank.name', read_only=True)
     bloodbank_city = serializers.CharField(source='bloodbank.city', read_only=True)
     bloodbank_address = serializers.CharField(source='bloodbank.address', read_only=True)
+    bloodbank_phone = serializers.CharField(source='bloodbank.phone', read_only=True)
+    bloodbank_email = serializers.CharField(source='bloodbank.email', read_only=True)
     user_username = serializers.CharField(source='user.username', read_only=True)
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    user_phone = serializers.CharField(source='user.phone', read_only=True)
     
     class Meta:
         model = Appointment
         fields = '__all__'
         extra_kwargs = {
             'user': {'read_only': True},
-            'status': {'read_only': True},
+            # bloodbank should be writable during creation, but we'll handle it in perform_create
         }
     
     def validate_appointment_date(self, value):
         """Ensure appointment date is not in the past"""
         from django.utils import timezone
-        if value and value < timezone.now().date():
+        if value is None:
+            raise serializers.ValidationError('Appointment date is required.')
+        if value < timezone.now().date():
             raise serializers.ValidationError('Appointment date cannot be in the past.')
         return value
     
     def validate_bloodbank(self, value):
         """Ensure blood bank is approved and operational"""
+        from bloodbank.models import BloodBank
+        
+        # Handle both ID (int) and BloodBank object
+        if value is None:
+            raise serializers.ValidationError('Blood bank is required.')
+        
+        # If value is an integer (ID), fetch the BloodBank object
+        if isinstance(value, int):
+            try:
+                bloodbank = BloodBank.objects.get(id=value)
+            except BloodBank.DoesNotExist:
+                raise serializers.ValidationError(f'Blood bank with ID {value} does not exist.')
+            value = bloodbank
+        
+        # Now validate the BloodBank object
+        if not isinstance(value, BloodBank):
+            raise serializers.ValidationError('Invalid blood bank provided.')
+        
+        # Check status - allow both 'approved' status OR if user is the blood bank owner
         if value.status != 'approved':
-            raise serializers.ValidationError('This blood bank is not approved. Please select an approved blood bank.')
+            raise serializers.ValidationError(
+                f'This blood bank is not approved (current status: {value.get_status_display()}). '
+                'Please select an approved blood bank.'
+            )
+        
         if not value.is_operational:
             raise serializers.ValidationError('This blood bank is currently not operational.')
+        
+        return value
+    
+    def validate_status(self, value):
+        """Validate status choices"""
+        if value:
+            valid_statuses = ['pending', 'approved', 'rejected', 'completed']
+            if value not in valid_statuses:
+                raise serializers.ValidationError(f'Status must be one of: {", ".join(valid_statuses)}')
         return value
 
 

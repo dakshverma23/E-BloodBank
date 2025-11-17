@@ -1,4 +1,6 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from .models import Donor, Donation, Appointment
 from .serializers import DonorSerializer, DonationSerializer, AppointmentSerializer
 
@@ -315,9 +317,125 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
         # Auto-assign user
-        serializer.save(user=user)
+        bloodbank = serializer.validated_data.get('bloodbank')
+        appointment_date = serializer.validated_data.get('appointment_date')
+        
+        # Validate bloodbank is provided
+        if not bloodbank:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({'bloodbank': ['Blood bank is required.']})
+        
+        # Save with user and bloodbank
+        appointment = serializer.save(user=user, bloodbank=bloodbank)
         
         # Log the appointment creation
         import logging
         logger = logging.getLogger(__name__)
-        logger.info(f"Appointment created: User {user.id} -> Blood Bank {serializer.validated_data.get('bloodbank').id} on {serializer.validated_data.get('appointment_date')}")
+        logger.info(f"Appointment created: User {user.id} -> Blood Bank {bloodbank.id} on {appointment_date}")
+    
+    def update(self, request, *args, **kwargs):
+        """Allow blood banks to update appointment status"""
+        instance = self.get_object()
+        user = request.user
+        
+        if hasattr(user, 'bloodbank'):
+            # Blood bank can update status - only allow status updates
+            if 'status' in request.data:
+                new_status = request.data['status']
+                if new_status in ['pending', 'approved', 'rejected', 'completed']:
+                    instance.status = new_status
+                    instance.save()
+                    serializer = self.get_serializer(instance)
+                    return Response(serializer.data)
+        
+        return super().update(request, *args, **kwargs)
+    
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """Approve an appointment (blood bank only)"""
+        appointment = self.get_object()
+        user = request.user
+        
+        if not hasattr(user, 'bloodbank'):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Only blood banks can approve appointments.')
+        
+        # Check if appointment belongs to this blood bank
+        if appointment.bloodbank != user.bloodbank:
+            return Response(
+                {'error': 'You can only approve appointments for your own blood bank.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Can approve pending or rejected appointments
+        if appointment.status not in ['pending', 'rejected']:
+            return Response(
+                {'error': f'Cannot approve appointment with status: {appointment.status}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        appointment.status = 'approved'
+        appointment.save()
+        
+        serializer = self.get_serializer(appointment)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """Reject an appointment (blood bank only)"""
+        appointment = self.get_object()
+        user = request.user
+        
+        if not hasattr(user, 'bloodbank'):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Only blood banks can reject appointments.')
+        
+        # Check if appointment belongs to this blood bank
+        if appointment.bloodbank != user.bloodbank:
+            return Response(
+                {'error': 'You can only reject appointments for your own blood bank.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Can only reject pending appointments
+        if appointment.status != 'pending':
+            return Response(
+                {'error': f'Can only reject pending appointments. Current status: {appointment.status}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        appointment.status = 'rejected'
+        appointment.save()
+        
+        serializer = self.get_serializer(appointment)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def complete(self, request, pk=None):
+        """Mark an appointment as completed (blood bank only)"""
+        appointment = self.get_object()
+        user = request.user
+        
+        if not hasattr(user, 'bloodbank'):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Only blood banks can mark appointments as completed.')
+        
+        # Check if appointment belongs to this blood bank
+        if appointment.bloodbank != user.bloodbank:
+            return Response(
+                {'error': 'You can only complete appointments for your own blood bank.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Can only complete approved appointments
+        if appointment.status != 'approved':
+            return Response(
+                {'error': f'Can only complete approved appointments. Current status: {appointment.status}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        appointment.status = 'completed'
+        appointment.save()
+        
+        serializer = self.get_serializer(appointment)
+        return Response(serializer.data)
