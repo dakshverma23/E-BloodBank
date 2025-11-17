@@ -37,7 +37,10 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-!#%x*v0p8t$-qi^cr8@cx
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', cast=bool, default=True)
 
-ALLOWED_HOSTS = [h.strip() for h in config('ALLOWED_HOSTS', default='').split(',') if h.strip()]
+# ALLOWED_HOSTS - can be set via environment variable (comma-separated)
+# Default includes localhost for development
+allowed_hosts_str = config('ALLOWED_HOSTS', default='localhost,127.0.0.1')
+ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_str.split(',') if h.strip()]
 
 
 # Application definition
