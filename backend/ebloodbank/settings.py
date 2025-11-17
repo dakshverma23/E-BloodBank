@@ -198,7 +198,7 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     o.strip() for o in config(
         'CORS_ALLOWED_ORIGINS',
-        default='http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000'
+        default='http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,https://e-blood-bank-pi.vercel.app'
     ).split(',') if o.strip()
 ]
 CORS_ALLOW_CREDENTIALS = True
