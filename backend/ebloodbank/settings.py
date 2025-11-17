@@ -42,6 +42,17 @@ DEBUG = config('DEBUG', cast=bool, default=True)
 allowed_hosts_str = config('ALLOWED_HOSTS', default='localhost,127.0.0.1')
 ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_str.split(',') if h.strip()]
 
+# Add Render domain if we're on Render (detected by RENDER environment variable)
+# Also add common Render domain patterns
+if not any('onrender.com' in host for host in ALLOWED_HOSTS):
+    ALLOWED_HOSTS.append('e-bloodbank.onrender.com')
+    # Allow any onrender.com subdomain
+    import os
+    if os.environ.get('RENDER'):
+        # On Render, allow the service domain
+        render_service_name = os.environ.get('RENDER_SERVICE_NAME', 'e-bloodbank')
+        ALLOWED_HOSTS.append(f'{render_service_name}.onrender.com')
+
 
 # Application definition
 
