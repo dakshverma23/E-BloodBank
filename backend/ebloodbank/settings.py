@@ -108,7 +108,9 @@ DATABASES = {
         'PORT': config('DATABASE_PORT', default='5432'),
         'OPTIONS': {
             'connect_timeout': 10,
-        }
+        },
+        # Use psycopg3 (psycopg) adapter if available
+        'CONN_MAX_AGE': 600,
     }
 }
 
