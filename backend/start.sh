@@ -26,6 +26,18 @@ fi
 
 echo "Migrations completed successfully!"
 
+# Create superuser if environment variables are set
+echo "=========================================="
+echo "Checking for superuser creation..."
+echo "=========================================="
+if [ -n "$ADMIN_PASSWORD" ]; then
+    echo "Creating superuser from environment variables..."
+    python create_superuser.py || true
+else
+    echo "ADMIN_PASSWORD not set. Skipping superuser creation."
+    echo "To create a superuser, set ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_PHONE, ADMIN_PASSWORD, and ADMIN_USER_TYPE in Render environment variables."
+fi
+
 # Collect static files (in case build step missed it)
 echo "=========================================="
 echo "Collecting static files..."

@@ -24,3 +24,17 @@ services:
         value: "False"
       - key: ALLOWED_HOSTS
         value: "e-bloodbank.onrender.com,localhost,127.0.0.1"
+      - key: ADMIN_USERNAME
+        value: "admin"
+        sync: false
+      - key: ADMIN_EMAIL
+        value: "admin@ebloodbank.com"
+        sync: false
+      - key: ADMIN_PHONE
+        value: "1234567890"
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_USER_TYPE
+        value: "admin"
+        sync: false
