@@ -106,6 +106,9 @@ DATABASES = {
         'PASSWORD': config('DATABASE_PASSWORD', default='daksh@postgres'),
         'HOST': config('DATABASE_HOST', default='localhost'),
         'PORT': config('DATABASE_PORT', default='5432'),
+        'OPTIONS': {
+            'connect_timeout': 10,
+        }
     }
 }
 

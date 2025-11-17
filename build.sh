@@ -11,5 +11,5 @@ pip install -r requirements.txt
 # Collect static files
 python manage.py collectstatic --noinput
 
-# Apply database migrations
-python manage.py migrate
+# Apply database migrations (skip if database not available during build)
+python manage.py migrate --run-syncdb || true
