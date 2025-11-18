@@ -4,12 +4,14 @@
 {% block title %}{{ title }} | {{ site_title|default:_('E-BloodBank Admin') }}{% endblock %}
 
 {% block branding %}
-<h1 id="site-name" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 15px 20px; margin: 0; border-radius: 8px;">
-    <a href="{% url 'admin:index' %}" style="color: white; text-decoration: none; font-weight: 600; font-size: 24px; display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 28px;">🩸</span>
-        E-BloodBank Administration
-    </a>
-</h1>
+<div style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 20px;">
+    <h1 id="site-name" style="margin: 0; padding: 0;">
+        <a href="{% url 'admin:index' %}" style="color: white; text-decoration: none; font-weight: 700; font-size: 26px; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px;">
+            <span style="font-size: 32px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">🩸</span>
+            <span>E-BloodBank Administration</span>
+        </a>
+    </h1>
+</div>
 {% endblock %}
 
 {% block nav-global %}{% endblock %}
@@ -21,25 +23,38 @@
     :root {
         --primary-color: #dc2626;
         --primary-dark: #991b1b;
+        --primary-light: #fee2e2;
         --secondary-color: #f3f4f6;
         --text-color: #1f2937;
+        --text-light: #6b7280;
         --border-color: #e5e7eb;
         --success-color: #10b981;
         --warning-color: #f59e0b;
         --danger-color: #ef4444;
+        --bg-color: #f9fafb;
+    }
+
+    * {
+        box-sizing: border-box;
     }
 
     body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        background: #f9fafb;
+        background: var(--bg-color);
         color: var(--text-color);
+        line-height: 1.6;
     }
 
     #header {
         background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         border-bottom: none;
         padding: 0;
+        height: auto;
+    }
+
+    #branding {
+        padding: 18px 0;
     }
 
     #branding h1 {
@@ -49,49 +64,69 @@
 
     #branding h1 a {
         color: white !important;
-        font-weight: 600;
+        font-weight: 700;
         text-decoration: none;
         transition: opacity 0.2s;
     }
 
     #branding h1 a:hover {
-        opacity: 0.9;
+        opacity: 0.95;
     }
 
     #user-tools {
         color: white;
         font-weight: 500;
+        padding: 0 20px;
     }
 
     #user-tools a {
         color: white !important;
         text-decoration: none;
-        padding: 8px 12px;
+        padding: 8px 14px;
         border-radius: 6px;
         transition: background 0.2s;
+        margin-left: 8px;
+        font-size: 14px;
     }
 
     #user-tools a:hover {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    #content {
+        padding: 40px;
+        max-width: 1400px;
+        margin: 0 auto;
     }
 
     .module {
         background: white;
         border: 1px solid var(--border-color);
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        margin-bottom: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 24px;
         overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .module:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
     }
 
     .module h2 {
-        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-        border-bottom: 2px solid var(--primary-color);
-        padding: 15px 20px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 3px solid var(--primary-color);
+        padding: 18px 24px;
         margin: 0;
-        font-size: 16px;
-        font-weight: 600;
+        font-size: 18px;
+        font-weight: 700;
         color: var(--text-color);
+    }
+
+    .module h2 a {
+        color: var(--text-color) !important;
+        text-decoration: none;
     }
 
     .module table {
@@ -101,38 +136,47 @@
 
     .module th {
         background: #f9fafb;
-        padding: 12px 15px;
+        padding: 14px 20px;
         text-align: left;
         font-weight: 600;
         color: var(--text-color);
         border-bottom: 2px solid var(--border-color);
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .module td {
-        padding: 12px 15px;
-        border-bottom: 1px solid var(--border-color);
+        padding: 16px 20px;
+        border-bottom: 1px solid #f3f4f6;
+        color: var(--text-color);
+    }
+
+    .module tr:last-child td {
+        border-bottom: none;
     }
 
     .module tr:hover {
         background: #f9fafb;
     }
 
-    .button, input[type=submit], .submit-row input {
+    .button, input[type=submit], .submit-row input, button[type=submit] {
         background: var(--primary-color);
         border: none;
-        border-radius: 6px;
-        padding: 10px 20px;
+        border-radius: 8px;
+        padding: 12px 24px;
         color: white;
-        font-weight: 500;
+        font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
-        box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+        box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
+        font-size: 14px;
     }
 
-    .button:hover, input[type=submit]:hover {
+    .button:hover, input[type=submit]:hover, button[type=submit]:hover {
         background: var(--primary-dark);
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
     }
 
     .button.default, input[type=submit].default {
@@ -142,30 +186,44 @@
     .addlink, .changelink, .viewlink {
         background: var(--primary-color);
         color: white !important;
-        padding: 6px 12px;
-        border-radius: 4px;
+        padding: 8px 16px;
+        border-radius: 6px;
         text-decoration: none;
         font-weight: 500;
         transition: all 0.2s;
+        font-size: 13px;
+        display: inline-block;
     }
 
     .addlink:hover, .changelink:hover, .viewlink:hover {
         background: var(--primary-dark);
         transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
     }
 
     .object-tools {
-        margin-bottom: 15px;
+        margin-bottom: 20px;
     }
 
-    #content {
-        padding: 30px;
+    .object-tools a {
+        background: var(--primary-color);
+        color: white !important;
+        padding: 10px 20px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .object-tools a:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
     }
 
     .dashboard {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
     }
 
     .dashboard .module {
@@ -175,46 +233,64 @@
     .submit-row {
         background: white;
         border-top: 2px solid var(--border-color);
-        padding: 15px 20px;
-        margin: 20px 0 0 0;
-        border-radius: 0 0 8px 8px;
+        padding: 20px 24px;
+        margin: 24px 0 0 0;
+        border-radius: 0 0 12px 12px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
     }
 
     .form-row {
-        padding: 15px 20px;
-        border-bottom: 1px solid var(--border-color);
+        padding: 18px 24px;
+        border-bottom: 1px solid #f3f4f6;
+        background: white;
     }
 
     .form-row:last-child {
         border-bottom: none;
     }
 
+    .form-row label {
+        font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 8px;
+        display: block;
+    }
+
     input[type=text], input[type=email], input[type=password], 
-    input[type=number], select, textarea {
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
-        padding: 8px 12px;
+    input[type=number], input[type=date], input[type=time],
+    select, textarea {
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        padding: 10px 14px;
         font-size: 14px;
-        transition: border-color 0.2s;
+        transition: all 0.2s;
+        width: 100%;
+        font-family: inherit;
     }
 
     input[type=text]:focus, input[type=email]:focus, 
-    input[type=password]:focus, input[type=number]:focus, 
+    input[type=password]:focus, input[type=number]:focus,
+    input[type=date]:focus, input[type=time]:focus,
     select:focus, textarea:focus {
         border-color: var(--primary-color);
         outline: none;
-        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
     }
 
     .messagelist {
-        margin: 20px 0;
+        margin: 24px 0;
+        list-style: none;
+        padding: 0;
     }
 
     .messagelist li {
-        padding: 15px 20px;
-        border-radius: 6px;
-        margin-bottom: 10px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        font-weight: 500;
     }
 
     .messagelist .success {
@@ -235,16 +311,151 @@
         border-left: 4px solid var(--warning-color);
     }
 
+    .messagelist .info {
+        background: #dbeafe;
+        color: #1e40af;
+        border-left: 4px solid #3b82f6;
+    }
+
+    /* Change list styling */
+    #changelist {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    #changelist-filter {
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 16px;
+        border: 1px solid var(--border-color);
+    }
+
+    #changelist-filter h2 {
+        color: var(--text-color);
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    #changelist-filter h3 {
+        color: var(--text-color);
+        font-size: 13px;
+        font-weight: 600;
+        margin: 12px 0 8px 0;
+    }
+
+    #changelist-filter a {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+
+    #changelist-filter a:hover {
+        color: var(--primary-dark);
+        text-decoration: underline;
+    }
+
+    #changelist-filter .selected {
+        background: var(--primary-light);
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+
+    /* Form styling */
+    .form-row input, .form-row select, .form-row textarea {
+        margin-top: 6px;
+    }
+
+    .help {
+        color: var(--text-light);
+        font-size: 13px;
+        margin-top: 6px;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
         #content {
-            padding: 15px;
+            padding: 20px;
         }
 
         .dashboard {
             grid-template-columns: 1fr;
         }
+
+        #header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        #user-tools {
+            margin-top: 12px;
+            padding: 0 20px 12px;
+        }
+    }
+
+    /* Remove default Django styling */
+    #header {
+        width: 100%;
+    }
+
+    #branding {
+        flex: 1;
+    }
+
+    /* Improve readability */
+    .readonly {
+        background: #f9fafb;
+        padding: 10px 14px;
+        border-radius: 6px;
+        color: var(--text-light);
+    }
+
+    /* Better fieldset styling */
+    fieldset {
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background: white;
+    }
+
+    fieldset h2 {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 12px 16px;
+        margin: -20px -20px 16px -20px;
+        border-radius: 8px 8px 0 0;
+        border-bottom: 2px solid var(--primary-color);
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    /* Better checkbox and radio styling */
+    input[type=checkbox], input[type=radio] {
+        width: auto;
+        margin-right: 8px;
+        cursor: pointer;
+    }
+
+    /* Improve select multiple */
+    select[multiple] {
+        min-height: 120px;
+    }
+
+    /* Better file input */
+    input[type=file] {
+        padding: 8px;
+        border: 2px dashed var(--border-color);
+        border-radius: 6px;
+        background: #f9fafb;
+    }
+
+    input[type=file]:hover {
+        border-color: var(--primary-color);
+        background: var(--primary-light);
     }
 </style>
 {% endblock %}
-

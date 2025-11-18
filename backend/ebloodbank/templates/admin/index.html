@@ -2,46 +2,93 @@
 {% load static i18n %}
 
 {% block content %}
-<div class="dashboard">
+<div style="margin-bottom: 30px;">
+    <h1 style="font-size: 32px; font-weight: 700; color: #1f2937; margin-bottom: 10px;">Dashboard Overview</h1>
+    <p style="color: #6b7280; font-size: 16px;">Manage your blood bank system efficiently</p>
+</div>
+
+<div class="dashboard" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px;">
     {% for app in app_list %}
-    <div class="module">
-        <h2>
-            <a href="{{ app.app_url }}" title="{% blocktrans with name=app.name %}Models in the {{ name }} application{% endblocktrans %}">
+    <div class="module" style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;">
+        <h2 style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 18px 20px; margin: 0; font-size: 18px; font-weight: 600; border-bottom: none;">
+            <a href="{{ app.app_url }}" style="color: white; text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 22px;">
+                    {% if app.name == "Accounts" %}👤
+                    {% elif app.name == "Bloodbank" %}🏥
+                    {% elif app.name == "Donors" %}🩸
+                    {% elif app.name == "Inventory" %}📦
+                    {% elif app.name == "Requests" %}📋
+                    {% else %}📁{% endif %}
+                </span>
                 {{ app.name }}
             </a>
         </h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Model</th>
-                    <th style="text-align: right;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for model in app.models %}
-                <tr>
-                    <td>
-                        {% if model.admin_url %}
-                            <a href="{{ model.admin_url }}">{{ model.name }}</a>
-                        {% else %}
-                            {{ model.name }}
-                        {% endif %}
-                    </td>
-                    <td style="text-align: right;">
-                        {% if model.add_url %}
-                            <a href="{{ model.add_url }}" class="addlink">Add</a>
-                        {% endif %}
-                        {% if model.admin_url %}
-                            <a href="{{ model.admin_url }}" class="changelink">Change</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div style="padding: 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="background: #f9fafb; padding: 12px 20px; text-align: left; font-weight: 600; color: #374151; border-bottom: 2px solid #e5e7eb; font-size: 14px;">Model</th>
+                        <th style="background: #f9fafb; padding: 12px 20px; text-align: right; font-weight: 600; color: #374151; border-bottom: 2px solid #e5e7eb; font-size: 14px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for model in app.models %}
+                    <tr style="border-bottom: 1px solid #f3f4f6; transition: background 0.2s;">
+                        <td style="padding: 14px 20px; color: #1f2937; font-size: 14px;">
+                            {% if model.admin_url %}
+                                <a href="{{ model.admin_url }}" style="color: #dc2626; text-decoration: none; font-weight: 500; transition: color 0.2s;">{{ model.name }}</a>
+                            {% else %}
+                                <span style="color: #6b7280;">{{ model.name }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 14px 20px; text-align: right;">
+                            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                                {% if model.add_url %}
+                                    <a href="{{ model.add_url }}" style="background: #dc2626; color: white; padding: 6px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; transition: all 0.2s; display: inline-block;">Add</a>
+                                {% endif %}
+                                {% if model.admin_url %}
+                                    <a href="{{ model.admin_url }}" style="background: #f3f4f6; color: #374151; padding: 6px 14px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 500; transition: all 0.2s; display: inline-block; border: 1px solid #e5e7eb;">View</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2" style="padding: 20px; text-align: center; color: #6b7280;">No models available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     {% empty %}
-    <p>{% trans "You don't have permission to view or edit anything." %}</p>
+    <div style="background: white; padding: 40px; border-radius: 12px; text-align: center; border: 1px solid #e5e7eb;">
+        <p style="color: #6b7280; font-size: 16px;">{% trans "You don't have permission to view or edit anything." %}</p>
+    </div>
     {% endfor %}
 </div>
+
+<style>
+    .module:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    }
+    
+    .module tbody tr:hover {
+        background: #f9fafb;
+    }
+    
+    .module a:hover {
+        color: #991b1b !important;
+    }
+    
+    .module a[style*="background: #dc2626"]:hover {
+        background: #991b1b !important;
+        transform: translateY(-1px);
+    }
+    
+    .module a[style*="background: #f3f4f6"]:hover {
+        background: #e5e7eb !important;
+    }
+</style>
 {% endblock %}
