@@ -53,13 +53,24 @@ class SendOTPView(APIView):
                 # TODO: Integrate with SMS service (Twilio, AWS SNS, etc.)
                 # self._send_sms_otp(phone, otp.code)
             
-            return Response({
+            # Check if email credentials are configured
+            email_host_user = getattr(settings, 'EMAIL_HOST_USER', None)
+            email_configured = bool(email_host_user)
+            
+            response_data = {
                 'message': f'OTP has been sent to your {otp_type}',
                 'expires_in_minutes': 10,
-                # In production, don't send the OTP code in response
-                # For development only:
-                **({'otp_code': otp.code} if settings.DEBUG else {})
-            }, status=status.HTTP_200_OK)
+            }
+            
+            # In development or if email is not configured, send OTP in response
+            # This helps with testing when email backend is not set up
+            if settings.DEBUG or not email_configured:
+                response_data['otp_code'] = otp.code
+                if not email_configured:
+                    response_data['message'] = f'OTP has been sent. Check console/logs for OTP code. Your OTP is also displayed below.'
+                    response_data['email_not_configured'] = True
+            
+            return Response(response_data, status=status.HTTP_200_OK)
             
         except Exception as e:
             logger.error(f"Error sending OTP: {str(e)}")
@@ -84,18 +95,52 @@ Best regards,
 E-BloodBank Team
         '''
         
-        try:
-            send_mail(
-                subject=subject,
-                message=message.strip(),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
-                fail_silently=False,
-            )
-            logger.info(f"OTP email sent to {email}")
-        except Exception as e:
-            logger.error(f"Error sending email OTP: {str(e)}")
-            raise
+        # Check if email is configured
+        email_host_user = getattr(settings, 'EMAIL_HOST_USER', None)
+        email_backend = getattr(settings, 'EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+        
+        # If email is not configured, use console backend or log it
+        if not email_host_user:
+            # Use console backend to print OTP in development
+            from django.core.mail import get_connection
+            from django.core.mail.message import EmailMessage
+            try:
+                # Try console backend if available
+                console_backend = 'django.core.mail.backends.console.EmailBackend'
+                connection = get_connection(backend=console_backend)
+                email_msg = EmailMessage(
+                    subject=subject,
+                    body=message.strip(),
+                    from_email=settings.DEFAULT_FROM_EMAIL or 'noreply@ebloodbank.com',
+                    to=[email],
+                    connection=connection,
+                )
+                email_msg.send()
+                logger.info(f"OTP sent via console backend to {email}: {code}")
+            except Exception as console_error:
+                # If console backend fails, just log it
+                logger.warning(f"Console email backend failed: {console_error}. OTP code for {email}: {code}")
+                print(f"\n{'='*60}")
+                print(f"OTP CODE for {email}: {code}")
+                print(f"{'='*60}\n")
+        else:
+            try:
+                send_mail(
+                    subject=subject,
+                    message=message.strip(),
+                    from_email=settings.DEFAULT_FROM_EMAIL or email_host_user,
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
+                logger.info(f"OTP email sent to {email}")
+            except Exception as e:
+                logger.error(f"Error sending email OTP: {str(e)}")
+                # Fallback: print to console if email sending fails
+                print(f"\n{'='*60}")
+                print(f"Email sending failed. OTP CODE for {email}: {code}")
+                print(f"Error: {str(e)}")
+                print(f"{'='*60}\n")
+                raise
     
     def _send_sms_otp(self, phone, code):
         """

@@ -338,21 +338,26 @@ export default function Signup() {
               </Button>
             ) : !emailOtpVerified ? (
               <div>
-                <Form.Item label="Enter OTP Code">
+                <Form.Item label="Enter OTP Code" style={{ marginBottom: '12px' }}>
                   <Input
                     placeholder="Enter 6-digit OTP"
                     maxLength={6}
                     value={emailOtpCode}
                     onChange={(e) => setEmailOtpCode(e.target.value.replace(/\D/g, ''))}
-                    style={{ marginBottom: '8px' }}
+                    style={{ fontSize: '18px', letterSpacing: '8px', textAlign: 'center', fontWeight: 'bold' }}
+                    autoFocus
                   />
                 </Form.Item>
+                <Text type="secondary" style={{ display: 'block', marginBottom: '12px', fontSize: '12px' }}>
+                  Enter the 6-digit code sent to your email. Check spam folder if not received.
+                </Text>
                 <Space>
                   <Button 
                     type="primary"
                     onClick={handleVerifyEmailOTP}
                     loading={verifyingEmailOtp}
                     disabled={emailOtpCode.length !== 6}
+                    size="large"
                   >
                     Verify OTP
                   </Button>
@@ -362,13 +367,22 @@ export default function Signup() {
                       setEmailOtpCode('')
                     }}
                   >
+                    Resend OTP
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setEmailOtpSent(false)
+                      setEmailOtpCode('')
+                      setEmailOtpVerified(false)
+                    }}
+                  >
                     Change Email
                   </Button>
                 </Space>
               </div>
             ) : (
-              <div style={{ padding: '8px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px' }}>
-                <Text type="success" strong>✓ Email verified: {verifiedEmail}</Text>
+              <div style={{ padding: '12px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px' }}>
+                <Text type="success" strong style={{ fontSize: '16px' }}>✓ Email verified: {verifiedEmail}</Text>
               </div>
             )}
           </div>
@@ -408,21 +422,26 @@ export default function Signup() {
               </Button>
             ) : !phoneOtpVerified ? (
               <div>
-                <Form.Item label="Enter OTP Code">
+                <Form.Item label="Enter OTP Code" style={{ marginBottom: '12px' }}>
                   <Input
                     placeholder="Enter 6-digit OTP"
                     maxLength={6}
                     value={phoneOtpCode}
                     onChange={(e) => setPhoneOtpCode(e.target.value.replace(/\D/g, ''))}
-                    style={{ marginBottom: '8px' }}
+                    style={{ fontSize: '18px', letterSpacing: '8px', textAlign: 'center', fontWeight: 'bold' }}
+                    autoFocus
                   />
                 </Form.Item>
+                <Text type="secondary" style={{ display: 'block', marginBottom: '12px', fontSize: '12px' }}>
+                  Enter the 6-digit code sent to your phone.
+                </Text>
                 <Space>
                   <Button 
                     type="primary"
                     onClick={handleVerifyPhoneOTP}
                     loading={verifyingPhoneOtp}
                     disabled={phoneOtpCode.length !== 6}
+                    size="large"
                   >
                     Verify OTP
                   </Button>
@@ -430,6 +449,16 @@ export default function Signup() {
                     onClick={() => {
                       setPhoneOtpSent(false)
                       setPhoneOtpCode('')
+                      handleSendPhoneOTP()
+                    }}
+                  >
+                    Resend OTP
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setPhoneOtpSent(false)
+                      setPhoneOtpCode('')
+                      setPhoneOtpVerified(false)
                     }}
                   >
                     Change Phone
@@ -437,8 +466,8 @@ export default function Signup() {
                 </Space>
               </div>
             ) : (
-              <div style={{ padding: '8px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px' }}>
-                <Text type="success" strong>✓ Phone verified: {verifiedPhone || form.getFieldValue('phone')}</Text>
+              <div style={{ padding: '12px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px' }}>
+                <Text type="success" strong style={{ fontSize: '16px' }}>✓ Phone verified: {verifiedPhone || form.getFieldValue('phone')}</Text>
               </div>
             )}
           </div>
