@@ -255,13 +255,23 @@ export default function Signup() {
               <div style={{ marginTop: '8px', fontWeight: 'bold', color: '#dc2626', fontSize: '16px' }}>
                 OTP Code: <span style={{ fontSize: '20px', letterSpacing: '3px', fontFamily: 'monospace' }}>{data.otp_code}</span>
               </div>
+              {data.error && (
+                <div style={{ marginTop: '8px', fontSize: '12px', color: '#ef4444', fontFamily: 'monospace' }}>
+                  ❌ Error: {data.error}
+                </div>
+              )}
+              {data.error_details && (
+                <div style={{ marginTop: '4px', fontSize: '11px', color: '#6b7280', fontFamily: 'monospace' }}>
+                  Details: {data.error_details}
+                </div>
+              )}
               {data.warning && (
                 <div style={{ marginTop: '8px', fontSize: '12px', color: '#f59e0b' }}>
                   ⚠️ {data.warning}
                 </div>
               )}
             </div>,
-            15 // Show for 15 seconds
+            20 // Show for 20 seconds to read error
           )
           // Auto-fill OTP code when email failed (for convenience)
           setEmailOtpCode(data.otp_code)
