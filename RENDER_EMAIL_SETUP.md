@@ -82,6 +82,66 @@ Try sending an OTP again - it should now work!
 - Environment variables on Render are encrypted
 - If your app password changes, update it in Render dashboard
 
+## ⚠️ IMPORTANT: Render Free Tier SMTP Blocking
+
+**If you see this error:**
+```
+OSError: [Errno 101] Network is unreachable
+```
+
+**This means Render's free tier is blocking outbound SMTP connections.**
+
+### Solution 1: Try Port 465 with SSL (Quick Fix)
+
+Update your Render environment variables:
+
+1. Change `EMAIL_PORT` from `587` to `465`
+2. Change `EMAIL_USE_TLS` from `True` to `False`
+3. Add new variable `EMAIL_USE_SSL` = `True`
+
+**Updated variables:**
+- `EMAIL_PORT` = `465`
+- `EMAIL_USE_TLS` = `False`
+- `EMAIL_USE_SSL` = `True` (NEW - add this)
+
+This sometimes works better on Render's network.
+
+### Solution 2: Use SendGrid (Recommended for Production)
+
+SendGrid works better on Render because it uses API instead of SMTP.
+
+#### Step 1: Sign up for SendGrid
+1. Go to https://sendgrid.com/
+2. Sign up for free account (100 emails/day free)
+3. Verify your email address
+
+#### Step 2: Create API Key
+1. Go to SendGrid Dashboard → Settings → API Keys
+2. Click "Create API Key"
+3. Name it "E-BloodBank"
+4. Give it "Mail Send" permissions
+5. **Copy the API key** (you'll only see it once!)
+
+#### Step 3: Update Render Environment Variables
+Replace your Gmail variables with:
+
+- `EMAIL_BACKEND` = `django.core.mail.backends.smtp.EmailBackend`
+- `EMAIL_HOST` = `smtp.sendgrid.net`
+- `EMAIL_PORT` = `587`
+- `EMAIL_USE_TLS` = `True`
+- `EMAIL_USE_SSL` = `False` (or remove it)
+- `EMAIL_HOST_USER` = `apikey` (literally the word "apikey")
+- `EMAIL_HOST_PASSWORD` = `[your-sendgrid-api-key]` (paste the API key you copied)
+- `DEFAULT_FROM_EMAIL` = `noreply@yourdomain.com` (or your verified email)
+
+#### Step 4: Verify Sender in SendGrid
+1. Go to SendGrid → Settings → Sender Authentication
+2. Verify a single sender (your email address)
+3. Or verify your domain (if you have one)
+
+### Solution 3: Upgrade Render Plan
+Render's paid plans ($7/month+) allow SMTP connections. But SendGrid is free and better for email.
+
 ## Troubleshooting
 
 ### If Email Still Fails After Adding Variables:
@@ -93,6 +153,7 @@ Try sending an OTP again - it should now work!
 ### Common Errors:
 - **"Authentication failed"** → Wrong app password or it expired
 - **"Connection refused"** → Firewall/network issue
+- **"[Errno 101] Network is unreachable"** → **Render free tier blocking SMTP** → Use SendGrid or port 465
 - **"Rate limit exceeded"** → Too many emails sent, wait a bit
 
 ## Quick Reference
