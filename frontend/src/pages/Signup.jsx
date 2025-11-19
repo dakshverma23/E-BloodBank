@@ -215,6 +215,205 @@ export default function Signup() {
     }
   }, [form])
 
+  // Send Email OTP
+  const handleSendEmailOTP = useCallback(async () => {
+    try {
+      await form.validateFields(['email'])
+    } catch (error) {
+      message.error('Please enter a valid email address')
+      return
+    }
+    
+    const email = form.getFieldValue('email')
+    if (!email || !email.trim()) {
+      message.error('Please enter your email address first')
+      return
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) {
+      message.error('Please enter a valid email address')
+      return
+    }
+
+    setSendingEmailOtp(true)
+    try {
+      const { data } = await api.post('/api/accounts/otp/send/', {
+        email: email.trim(),
+        otp_type: 'email'
+      })
+      setEmailOtpSent(true)
+      setEmailOtpCode('')
+      
+      // Show OTP code if provided (for development or when email is not configured)
+      if (data.otp_code) {
+        message.success(
+          <div>
+            <div>{data.message || 'OTP generated!'}</div>
+            {data.email_not_configured && (
+              <div style={{ marginTop: '8px', fontWeight: 'bold', color: '#dc2626' }}>
+                OTP Code: <span style={{ fontSize: '18px', letterSpacing: '2px' }}>{data.otp_code}</span>
+              </div>
+            )}
+            {!data.email_not_configured && (
+              <div style={{ marginTop: '4px', fontSize: '12px', color: '#6b7280' }}>
+                Check your inbox or spam folder. OTP: {data.otp_code} (dev mode)
+              </div>
+            )}
+          </div>,
+          10 // Show for 10 seconds
+        )
+        // Also set the OTP code automatically in development mode
+        if (data.email_not_configured) {
+          setEmailOtpCode(data.otp_code)
+        }
+      } else {
+        message.success(data.message || 'OTP sent to your email! Check your inbox and spam folder.')
+      }
+    } catch (error) {
+      const resp = error?.response?.data
+      const errorMsg = resp?.error || resp?.message || 'Failed to send OTP'
+      message.error(errorMsg)
+      console.error('OTP send error:', error)
+    } finally {
+      setSendingEmailOtp(false)
+    }
+  }, [form])
+
+  // Verify Email OTP
+  const handleVerifyEmailOTP = useCallback(async () => {
+    if (!emailOtpCode || emailOtpCode.length !== 6) {
+      message.error('Please enter a valid 6-digit OTP code')
+      return
+    }
+
+    const email = form.getFieldValue('email')
+    if (!email || !email.trim()) {
+      message.error('Email is required')
+      return
+    }
+
+    setVerifyingEmailOtp(true)
+    try {
+      const { data } = await api.post('/api/accounts/otp/verify/', {
+        email: email.trim(),
+        code: emailOtpCode,
+        otp_type: 'email'
+      })
+      
+      if (data.verified) {
+        setEmailOtpVerified(true)
+        setEmailVerified(true)
+        setVerifiedEmail(email.trim())
+        message.success('Email verified successfully!')
+      } else {
+        message.error(data.error || 'Invalid OTP code')
+      }
+    } catch (error) {
+      const resp = error?.response?.data
+      message.error(resp?.error || 'Failed to verify OTP')
+    } finally {
+      setVerifyingEmailOtp(false)
+    }
+  }, [emailOtpCode, form])
+
+  // Send Phone OTP
+  const handleSendPhoneOTP = useCallback(async () => {
+    try {
+      await form.validateFields(['phone'])
+    } catch (error) {
+      message.error('Please enter a valid phone number')
+      return
+    }
+    
+    const phone = form.getFieldValue('phone')
+    if (!phone) {
+      message.error('Please enter your phone number first')
+      return
+    }
+
+    const phoneDigits = phone.replace(/\D/g, '')
+    if (phoneDigits.length !== 10) {
+      message.error('Phone number must be exactly 10 digits')
+      return
+    }
+
+    setSendingPhoneOtp(true)
+    try {
+      const { data } = await api.post('/api/accounts/otp/send/', {
+        phone: phoneDigits,
+        otp_type: 'phone'
+      })
+      setPhoneOtpSent(true)
+      setPhoneOtpCode('')
+      
+      // Show OTP code if provided (for development)
+      if (data.otp_code) {
+        message.success(
+          <div>
+            <div>{data.message || 'OTP generated!'}</div>
+            <div style={{ marginTop: '8px', fontWeight: 'bold', color: '#dc2626' }}>
+              OTP Code: <span style={{ fontSize: '18px', letterSpacing: '2px' }}>{data.otp_code}</span>
+            </div>
+            <div style={{ marginTop: '4px', fontSize: '12px', color: '#6b7280' }}>
+              (Note: SMS service not configured. Use this code for testing.)
+            </div>
+          </div>,
+          10
+        )
+        setPhoneOtpCode(data.otp_code)
+      } else {
+        message.success(data.message || 'OTP sent to your phone!')
+      }
+    } catch (error) {
+      const resp = error?.response?.data
+      const errorMsg = resp?.error || resp?.message || 'Failed to send OTP'
+      message.error(errorMsg)
+      console.error('OTP send error:', error)
+    } finally {
+      setSendingPhoneOtp(false)
+    }
+  }, [form])
+
+  // Verify Phone OTP
+  const handleVerifyPhoneOTP = useCallback(async () => {
+    if (!phoneOtpCode || phoneOtpCode.length !== 6) {
+      message.error('Please enter a valid 6-digit OTP code')
+      return
+    }
+
+    const phone = form.getFieldValue('phone')
+    if (!phone) {
+      message.error('Phone is required')
+      return
+    }
+
+    const phoneDigits = phone.replace(/\D/g, '')
+
+    setVerifyingPhoneOtp(true)
+    try {
+      const { data } = await api.post('/api/accounts/otp/verify/', {
+        phone: phoneDigits,
+        code: phoneOtpCode,
+        otp_type: 'phone'
+      })
+      
+      if (data.verified) {
+        setPhoneOtpVerified(true)
+        setPhoneVerified(true)
+        setVerifiedPhone(phoneDigits)
+        message.success('Phone verified successfully!')
+      } else {
+        message.error(data.error || 'Invalid OTP code')
+      }
+    } catch (error) {
+      const resp = error?.response?.data
+      message.error(resp?.error || 'Failed to verify OTP')
+    } finally {
+      setVerifyingPhoneOtp(false)
+    }
+  }, [phoneOtpCode, form])
+
   async function onFinish(values) {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
