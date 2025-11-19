@@ -31,8 +31,8 @@ class BloodBankAdmin(admin.ModelAdmin):
 
 @admin.register(DonationCamp)
 class DonationCampAdmin(admin.ModelAdmin):
-    list_display = ('name', 'bloodbank', 'city', 'camp_date', 'status', 'created_at')
-    list_filter = ('status', 'camp_date', 'city', 'state', 'created_at')
+    list_display = ('name', 'bloodbank', 'city', 'start_date', 'end_date', 'created_at')
+    list_filter = ('start_date', 'end_date', 'city', 'state', 'created_at')
     search_fields = ('name', 'bloodbank__name', 'city', 'state', 'address')
-    readonly_fields = ('created_at', 'updated_at')
-    ordering = ('-camp_date',)
+    readonly_fields = ('created_at',)
+    ordering = ('-start_date',)

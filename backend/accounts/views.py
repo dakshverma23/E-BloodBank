@@ -24,9 +24,45 @@ class SignupView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        # Check if email is verified via Firebase
+        # Check OTP verification
         email = request.data.get('email')
         phone = request.data.get('phone')
+        otp_verified = request.data.get('otp_verified', False)
+        
+        # Require OTP verification
+        if not otp_verified:
+            # Check if OTP was verified via the verify endpoint
+            if email:
+                from .models import OTP
+                # Check if there's a verified OTP for this email
+                verified_otp = OTP.objects.filter(
+                    email=email.strip().lower(),
+                    is_verified=True,
+                    otp_type='email'
+                ).order_by('-created_at').first()
+                
+                if not verified_otp:
+                    return Response(
+                        {'error': 'Please verify your email with OTP before signing up'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            elif phone:
+                from .models import OTP
+                phone_normalized = ''.join(filter(str.isdigit, phone.strip()))
+                # Check if there's a verified OTP for this phone
+                verified_otp = OTP.objects.filter(
+                    phone=phone_normalized,
+                    is_verified=True,
+                    otp_type='phone'
+                ).order_by('-created_at').first()
+                
+                if not verified_otp:
+                    return Response(
+                        {'error': 'Please verify your phone with OTP before signing up'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+        
+        # Legacy Firebase token support (optional)
         firebase_token = request.data.get('firebase_token')
         
         # Verify Firebase token if provided
@@ -94,7 +130,9 @@ class SignupView(APIView):
         serializer = UserSerializer(data=data)
         if serializer.is_valid():
             user = serializer.save()
-            # Mark user as verified since email/phone is verified via Firebase
+            # Mark user as verified since email/phone is verified via OTP
+            
+
             user.is_verified = True
             user.save()
             

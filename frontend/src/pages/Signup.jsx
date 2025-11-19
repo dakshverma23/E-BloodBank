@@ -31,6 +31,17 @@ export default function Signup() {
   const [otpCode, setOtpCode] = useState('')
   const [confirmationResult, setConfirmationResult] = useState(null)
   const [recaptchaVerifier, setRecaptchaVerifier] = useState(null)
+  // OTP verification states
+  const [emailOtpSent, setEmailOtpSent] = useState(false)
+  const [emailOtpCode, setEmailOtpCode] = useState('')
+  const [emailOtpVerified, setEmailOtpVerified] = useState(false)
+  const [sendingEmailOtp, setSendingEmailOtp] = useState(false)
+  const [verifyingEmailOtp, setVerifyingEmailOtp] = useState(false)
+  const [phoneOtpSent, setPhoneOtpSent] = useState(false)
+  const [phoneOtpCode, setPhoneOtpCode] = useState('')
+  const [phoneOtpVerified, setPhoneOtpVerified] = useState(false)
+  const [sendingPhoneOtp, setSendingPhoneOtp] = useState(false)
+  const [verifyingPhoneOtp, setVerifyingPhoneOtp] = useState(false)
   const navigate = useNavigate()
   const [form] = Form.useForm()
 
@@ -219,21 +230,15 @@ export default function Signup() {
       return
     }
 
-    // Firebase verification is optional - auto-validate if not already done
-    if (!emailVerified) {
-      const email = values.email?.trim()
-      if (email && emailRegex.test(email)) {
-        setEmailVerified(true)
-        setVerifiedEmail(email)
-      }
+    // Require OTP verification before signup
+    if (!emailOtpVerified) {
+      message.error('Please verify your email with OTP before signing up')
+      return
     }
 
-    if (!phoneVerified) {
-      const phone = values.phone?.replace(/\D/g, '')
-      if (phone && phone.length === 10) {
-        setPhoneVerified(true)
-        setVerifiedPhone(phone)
-      }
+    if (!phoneOtpVerified) {
+      message.error('Please verify your phone with OTP before signing up')
+      return
     }
 
     // Use verified email/phone if available, otherwise use form values
@@ -304,8 +309,8 @@ export default function Signup() {
           <div style={{ marginBottom: '24px' }}>
             <Text strong style={{ display: 'block', marginBottom: '12px' }}>Step 1: Verify Your Email and Phone</Text>
             
-          {/* Email Verification - Simplified */}
-          <div style={{ marginBottom: '16px' }}>
+          {/* Email OTP Verification */}
+          <div style={{ marginBottom: '16px', padding: '16px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
             <Form.Item 
               name="email" 
               label="Email" 
@@ -316,26 +321,60 @@ export default function Signup() {
               <Input 
                 placeholder="Enter email address" 
                 prefix={<MailOutlined />}
+                disabled={emailOtpVerified}
               />
             </Form.Item>
-            <Button 
-              type="primary" 
-              icon={<MailOutlined />}
-              onClick={handleEmailVerification}
-              loading={verifyingEmail}
-              block
-            >
-              Validate Email Format
-            </Button>
-            {emailVerified && (
-              <div style={{ padding: '8px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px', marginTop: '8px', marginBottom: '8px' }}>
-                <Text type="success" strong>✓ Email format validated: {verifiedEmail}</Text>
+            
+            {!emailOtpSent ? (
+              <Button 
+                type="primary" 
+                icon={<MailOutlined />}
+                onClick={handleSendEmailOTP}
+                loading={sendingEmailOtp}
+                block
+                disabled={emailOtpVerified}
+              >
+                Send OTP to Email
+              </Button>
+            ) : !emailOtpVerified ? (
+              <div>
+                <Form.Item label="Enter OTP Code">
+                  <Input
+                    placeholder="Enter 6-digit OTP"
+                    maxLength={6}
+                    value={emailOtpCode}
+                    onChange={(e) => setEmailOtpCode(e.target.value.replace(/\D/g, ''))}
+                    style={{ marginBottom: '8px' }}
+                  />
+                </Form.Item>
+                <Space>
+                  <Button 
+                    type="primary"
+                    onClick={handleVerifyEmailOTP}
+                    loading={verifyingEmailOtp}
+                    disabled={emailOtpCode.length !== 6}
+                  >
+                    Verify OTP
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setEmailOtpSent(false)
+                      setEmailOtpCode('')
+                    }}
+                  >
+                    Change Email
+                  </Button>
+                </Space>
+              </div>
+            ) : (
+              <div style={{ padding: '8px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px' }}>
+                <Text type="success" strong>✓ Email verified: {verifiedEmail}</Text>
               </div>
             )}
           </div>
 
-          {/* Phone Verification - Simplified */}
-          <div style={{ marginBottom: '16px' }}>
+          {/* Phone OTP Verification */}
+          <div style={{ marginBottom: '16px', padding: '16px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
             <Form.Item 
               name="phone" 
               label="Phone Number" 
@@ -348,59 +387,58 @@ export default function Signup() {
                 placeholder="Enter 10-digit phone number" 
                 prefix={<PhoneOutlined />}
                 maxLength={10}
+                disabled={phoneOtpVerified}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, '')
                   form.setFieldsValue({ phone: value })
                 }}
               />
             </Form.Item>
-            <Button 
-              type="primary" 
-              icon={<PhoneOutlined />}
-              onClick={handlePhoneVerification}
-              loading={verifyingPhone}
-              block
-              style={{ marginBottom: '8px' }}
-            >
-              Validate Phone Format
-            </Button>
-            {auth && !phoneVerified && (
-              <>
-                <div id="recaptcha-container"></div>
-                
-                {otpSent && (
-                  <Modal
-                    title="Enter OTP (Optional)"
-                    open={otpSent}
-                    onOk={handleVerifyOTP}
-                    onCancel={() => {
-                      setOtpSent(false)
-                      setOtpCode('')
-                      // Allow proceeding without OTP
-                      message.info('Skipping OTP verification. You can proceed with signup.')
-                      setPhoneVerified(true)
-                      setVerifiedPhone(form.getFieldValue('phone'))
-                    }}
-                    okText="Verify OTP"
-                    cancelText="Skip OTP"
+            
+            {!phoneOtpSent ? (
+              <Button 
+                type="primary" 
+                icon={<PhoneOutlined />}
+                onClick={handleSendPhoneOTP}
+                loading={sendingPhoneOtp}
+                block
+                disabled={phoneOtpVerified}
+              >
+                Send OTP to Phone
+              </Button>
+            ) : !phoneOtpVerified ? (
+              <div>
+                <Form.Item label="Enter OTP Code">
+                  <Input
+                    placeholder="Enter 6-digit OTP"
+                    maxLength={6}
+                    value={phoneOtpCode}
+                    onChange={(e) => setPhoneOtpCode(e.target.value.replace(/\D/g, ''))}
+                    style={{ marginBottom: '8px' }}
+                  />
+                </Form.Item>
+                <Space>
+                  <Button 
+                    type="primary"
+                    onClick={handleVerifyPhoneOTP}
+                    loading={verifyingPhoneOtp}
+                    disabled={phoneOtpCode.length !== 6}
                   >
-                    <Input
-                      placeholder="Enter 6-digit OTP (if received)"
-                      value={otpCode}
-                      onChange={(e) => setOtpCode(e.target.value)}
-                      maxLength={6}
-                      style={{ marginBottom: '16px' }}
-                    />
-                    <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
-                      Note: OTP verification requires Firebase billing. If you didn't receive OTP, you can skip and proceed with signup.
-                    </Text>
-                  </Modal>
-                )}
-              </>
-            )}
-            {phoneVerified && (
-              <div style={{ padding: '8px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px', marginTop: '8px' }}>
-                <Text type="success" strong>✓ Phone validated: {verifiedPhone || form.getFieldValue('phone')}</Text>
+                    Verify OTP
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setPhoneOtpSent(false)
+                      setPhoneOtpCode('')
+                    }}
+                  >
+                    Change Phone
+                  </Button>
+                </Space>
+              </div>
+            ) : (
+              <div style={{ padding: '8px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '4px' }}>
+                <Text type="success" strong>✓ Phone verified: {verifiedPhone || form.getFieldValue('phone')}</Text>
               </div>
             )}
           </div>

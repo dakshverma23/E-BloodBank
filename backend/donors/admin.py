@@ -13,17 +13,17 @@ class DonorAdmin(admin.ModelAdmin):
 
 @admin.register(Donation)
 class DonationAdmin(admin.ModelAdmin):
-    list_display = ('donor', 'bloodbank', 'blood_group', 'units_donated', 'donation_date', 'created_at')
-    list_filter = ('blood_group', 'donation_date', 'created_at')
+    list_display = ('donor', 'bloodbank', 'units_donated', 'donation_date', 'created_at')
+    list_filter = ('donation_date', 'created_at')
     search_fields = ('donor__full_name', 'bloodbank__name')
-    readonly_fields = ('created_at', 'updated_at')
+    readonly_fields = ('created_at',)
     ordering = ('-donation_date',)
 
 
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
-    list_display = ('donor', 'bloodbank', 'appointment_date', 'status', 'created_at')
+    list_display = ('user', 'bloodbank', 'appointment_date', 'status', 'created_at')
     list_filter = ('status', 'appointment_date', 'created_at')
-    search_fields = ('donor__full_name', 'bloodbank__name')
+    search_fields = ('user__username', 'bloodbank__name')
     readonly_fields = ('created_at', 'updated_at')
     ordering = ('-appointment_date',)
