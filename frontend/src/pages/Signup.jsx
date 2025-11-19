@@ -247,28 +247,40 @@ export default function Signup() {
       
       // Show OTP code if provided (for development or when email is not configured)
       if (data.otp_code) {
-        message.success(
-          <div>
-            <div>{data.message || 'OTP generated!'}</div>
-            {data.email_not_configured && (
-              <div style={{ marginTop: '8px', fontWeight: 'bold', color: '#dc2626' }}>
-                OTP Code: <span style={{ fontSize: '18px', letterSpacing: '2px' }}>{data.otp_code}</span>
-              </div>
-            )}
-            {!data.email_not_configured && (
-              <div style={{ marginTop: '4px', fontSize: '12px', color: '#6b7280' }}>
-                Check your inbox or spam folder. OTP: {data.otp_code} (dev mode)
-              </div>
-            )}
-          </div>,
-          10 // Show for 10 seconds
-        )
-        // Also set the OTP code automatically in development mode
+        // Email not configured - show warning and OTP code
         if (data.email_not_configured) {
+          message.warning(
+            <div>
+              <div style={{ marginBottom: '8px', fontWeight: '500' }}>{data.message || 'OTP generated!'}</div>
+              <div style={{ marginTop: '8px', fontWeight: 'bold', color: '#dc2626', fontSize: '16px' }}>
+                OTP Code: <span style={{ fontSize: '20px', letterSpacing: '3px', fontFamily: 'monospace' }}>{data.otp_code}</span>
+              </div>
+              {data.warning && (
+                <div style={{ marginTop: '8px', fontSize: '12px', color: '#f59e0b' }}>
+                  ⚠️ {data.warning}
+                </div>
+              )}
+            </div>,
+            15 // Show for 15 seconds
+          )
+          // Auto-fill OTP code when email not configured (for convenience)
           setEmailOtpCode(data.otp_code)
+        } else {
+          // Dev mode - email configured but OTP shown for testing
+          message.info(
+            <div>
+              <div>{data.message || 'OTP sent to your email!'}</div>
+              <div style={{ marginTop: '4px', fontSize: '12px', color: '#1890ff' }}>
+                💡 Dev mode: OTP is {data.otp_code} (Check your inbox for the actual email)
+              </div>
+            </div>,
+            10
+          )
+          // Don't auto-fill in dev mode - user should check email
         }
       } else {
-        message.success(data.message || 'OTP sent to your email! Check your inbox and spam folder.')
+        // Email sent successfully - don't show OTP code
+        message.success(data.message || 'OTP sent to your email! Check your inbox and spam folder.', 8)
       }
     } catch (error) {
       const resp = error?.response?.data
