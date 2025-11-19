@@ -47,6 +47,7 @@ class SendOTPView(APIView):
             email_sent = False
             email_configured = False
             is_console_backend = False
+            email_error = None
             
             if otp_type == 'email' and email:
                 # Check if email is configured before attempting to send
@@ -60,18 +61,11 @@ class SendOTPView(APIView):
                     self._send_email_otp(email, otp.code)
                     email_sent = True
                 except Exception as e:
-                    # If email sending failed and it's not console backend, return error
-                    if not is_console_backend:
-                        logger.error(f"Failed to send OTP email: {str(e)}")
-                        return Response(
-                            {
-                                'error': f'Failed to send OTP email: {str(e)}',
-                                'message': 'Please check your email configuration. See EMAIL_SETUP.md for instructions.'
-                            },
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                        )
-                    # If console backend, email was "sent" (printed to console)
-                    email_sent = True
+                    email_error = str(e)
+                    logger.error(f"Failed to send OTP email to {email}: {email_error}")
+                    # Don't fail completely - still allow OTP to be used
+                    # Email sending failed, but we'll still return the OTP
+                    email_sent = False
                     
             elif otp_type == 'phone' and phone:
                 # For phone, you would integrate with SMS service (Twilio, etc.)
@@ -96,6 +90,16 @@ class SendOTPView(APIView):
                         'otp_code': otp.code,
                         'email_not_configured': True,
                         'warning': 'Using console email backend. Configure SMTP for production.'
+                    }
+                elif not email_sent and email_error:
+                    # Email sending failed - return OTP with error message
+                    response_data = {
+                        'message': f'OTP generated! However, email sending failed. Please use the OTP code below.',
+                        'expires_in_minutes': 10,
+                        'otp_code': otp.code,
+                        'email_send_failed': True,
+                        'error': f'Email sending failed: {email_error}',
+                        'warning': 'Email could not be sent. Please check your email configuration or use the OTP code displayed below.'
                     }
                 else:
                     # Email not configured
