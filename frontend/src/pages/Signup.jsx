@@ -247,8 +247,27 @@ export default function Signup() {
       
       // Show OTP code if provided (for development or when email is not configured)
       if (data.otp_code) {
+        // Email sending failed - show error and OTP code
+        if (data.email_send_failed) {
+          message.warning(
+            <div>
+              <div style={{ marginBottom: '8px', fontWeight: '500' }}>{data.message || 'OTP generated!'}</div>
+              <div style={{ marginTop: '8px', fontWeight: 'bold', color: '#dc2626', fontSize: '16px' }}>
+                OTP Code: <span style={{ fontSize: '20px', letterSpacing: '3px', fontFamily: 'monospace' }}>{data.otp_code}</span>
+              </div>
+              {data.warning && (
+                <div style={{ marginTop: '8px', fontSize: '12px', color: '#f59e0b' }}>
+                  ⚠️ {data.warning}
+                </div>
+              )}
+            </div>,
+            15 // Show for 15 seconds
+          )
+          // Auto-fill OTP code when email failed (for convenience)
+          setEmailOtpCode(data.otp_code)
+        }
         // Email not configured - show warning and OTP code
-        if (data.email_not_configured) {
+        else if (data.email_not_configured) {
           message.warning(
             <div>
               <div style={{ marginBottom: '8px', fontWeight: '500' }}>{data.message || 'OTP generated!'}</div>
