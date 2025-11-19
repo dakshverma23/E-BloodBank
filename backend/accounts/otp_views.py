@@ -60,14 +60,14 @@ class SendOTPView(APIView):
                 try:
                     self._send_email_otp(email, otp.code)
                     email_sent = True
-        except Exception as e:
-            email_error = str(e)
-            error_type = type(e).__name__
-            logger.error(f"Failed to send OTP email to {email}: {error_type}: {email_error}")
-            logger.exception("Full email error traceback:")
-            # Don't fail completely - still allow OTP to be used
-            # Email sending failed, but we'll still return the OTP
-            email_sent = False
+                except Exception as e:
+                    email_error = str(e)
+                    error_type = type(e).__name__
+                    logger.error(f"Failed to send OTP email to {email}: {error_type}: {email_error}")
+                    logger.exception("Full email error traceback:")
+                    # Don't fail completely - still allow OTP to be used
+                    # Email sending failed, but we'll still return the OTP
+                    email_sent = False
                     
             elif otp_type == 'phone' and phone:
                 # For phone, you would integrate with SMS service (Twilio, etc.)
