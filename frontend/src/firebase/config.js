@@ -55,12 +55,15 @@ export const initializeRecaptcha = (elementId) => {
   })
 }
 
-// Initialize Google Auth Provider
-export const googleProvider = new GoogleAuthProvider()
-googleProvider.setCustomParameters({
-  prompt: 'select_account'
-})
+// Initialize Google Auth Provider (only if Firebase is configured)
+let googleProvider = null
+if (auth) {
+  googleProvider = new GoogleAuthProvider()
+  googleProvider.setCustomParameters({
+    prompt: 'select_account'
+  })
+}
 
-export { auth }
+export { auth, googleProvider }
 export default app
 

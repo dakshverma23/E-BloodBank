@@ -41,6 +41,11 @@ export default function Login() {
       message.error('Firebase is not configured. Please contact support.')
       return
     }
+    
+    if (!googleProvider) {
+      message.error('Google authentication is not available. Please use username/password login.')
+      return
+    }
 
     setSigningInWithGoogle(true)
     try {
@@ -94,7 +99,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(to bottom, #f0f2f5, #ffffff)' }}>
       <Card title={<h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc2626', textAlign: 'center' }}>Login to e-BloodBank</h2>} className="w-full max-w-md shadow-lg">
         {/* Google Sign-in Button */}
-        {auth && (
+        {auth && googleProvider && (
           <div style={{ marginBottom: '24px' }}>
             <Button
               type="default"

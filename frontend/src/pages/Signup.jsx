@@ -457,6 +457,86 @@ export default function Signup() {
     }
   }, [phoneOtpCode, form])
 
+  // Handle Google Sign-in/Sign-up
+  const handleGoogleAuth = useCallback(async () => {
+    if (!auth) {
+      message.error('Firebase is not configured. Please contact support.')
+      return
+    }
+    
+    if (!googleProvider) {
+      message.error('Google authentication is not available. Please use email/password signup.')
+      return
+    }
+
+    setSigningInWithGoogle(true)
+    try {
+      const result = await signInWithPopup(auth, googleProvider)
+      const user = result.user
+      const token = await user.getIdToken()
+      
+      // Get user info from Google
+      const email = user.email
+      const name = user.displayName || user.email?.split('@')[0] || 'User'
+      const photoURL = user.photoURL
+      
+      // Try to sign up or login with backend
+      try {
+        // First, try to create account with Google credentials
+        const payload = {
+          username: email?.split('@')[0] || name.toLowerCase().replace(/\s+/g, ''),
+          email: email,
+          password: Math.random().toString(36).slice(-16) + 'A1!', // Generate a random password
+          user_type: form.getFieldValue('user_type') || 'donor',
+          firebase_token: token,
+        }
+        
+        const { data } = await api.post('/api/accounts/signup/', payload)
+        if (data?.access && data?.refresh) {
+          setTokens({ access: data.access, refresh: data.refresh })
+        }
+        message.success('Account created successfully with Google!')
+        navigate('/')
+      } catch (signupError) {
+        // If signup fails, try login
+        try {
+          const loginPayload = {
+            username: email?.split('@')[0] || name.toLowerCase().replace(/\s+/g, ''),
+            firebase_token: token,
+          }
+          
+          const { data } = await api.post('/api/auth/token/by-username-or-email/', loginPayload)
+          if (data?.access && data?.refresh) {
+            setTokens({ access: data.access, refresh: data.refresh })
+          }
+          message.success('Logged in with Google!')
+          
+          // Fetch user role and navigate
+          const meResp = await api.get('/api/accounts/me/')
+          const role = meResp?.data?.user_type
+          navigate(role === 'bloodbank' ? '/dashboard/bloodbank' : '/dashboard/donor', { replace: true })
+        } catch (loginError) {
+          message.error('Failed to authenticate with Google. Please try manual signup.')
+          console.error('Google auth error:', loginError)
+        }
+      }
+      
+      // Sign out from Firebase after backend authentication
+      if (auth.currentUser) {
+        await signOut(auth)
+      }
+    } catch (error) {
+      console.error('Google sign-in error:', error)
+      if (error.code === 'auth/popup-closed-by-user') {
+        message.info('Sign-in popup was closed')
+      } else {
+        message.error('Failed to sign in with Google. Please try again.')
+      }
+    } finally {
+      setSigningInWithGoogle(false)
+    }
+  }, [auth, googleProvider, form, navigate])
+
   async function onFinish(values) {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -547,7 +627,7 @@ export default function Signup() {
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(to bottom, #f0f2f5, #ffffff)' }}>
       <Card title={<h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc2626', textAlign: 'center' }}>Signup for e-BloodBank</h2>} className="w-full max-w-md shadow-lg">
         {/* Google Sign-in Button */}
-        {auth && (
+        {auth && googleProvider && (
           <div style={{ marginBottom: '24px' }}>
             <Button
               type="default"
