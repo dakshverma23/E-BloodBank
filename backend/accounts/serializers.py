@@ -9,13 +9,47 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True)
+    password = serializers.CharField(write_only=True, required=True, min_length=6, max_length=4096)
     profile = UserProfileSerializer(read_only=True)
 
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'phone', 'user_type', 'is_active', 'is_staff', 'is_superuser', 'password', 'profile']
         read_only_fields = ['is_staff', 'is_superuser', 'is_active']
+
+    def validate_password(self, value):
+        """Validate password meets all requirements"""
+        import re
+        errors = []
+        
+        # Check minimum length
+        if len(value) < 6:
+            errors.append('Password must be at least 6 characters long.')
+        
+        # Check maximum length
+        if len(value) > 4096:
+            errors.append('Password must be no more than 4096 characters long.')
+        
+        # Check uppercase
+        if not re.search(r'[A-Z]', value):
+            errors.append('Password must contain at least one uppercase letter.')
+        
+        # Check lowercase
+        if not re.search(r'[a-z]', value):
+            errors.append('Password must contain at least one lowercase letter.')
+        
+        # Check numeric
+        if not re.search(r'[0-9]', value):
+            errors.append('Password must contain at least one numeric character.')
+        
+        # Check special character
+        if not re.search(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]', value):
+            errors.append('Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;:,.<>/?).')
+        
+        if errors:
+            raise serializers.ValidationError(errors)
+        
+        return value
 
     def validate_phone(self, value):
         """Validate that phone number is exactly 10 digits"""

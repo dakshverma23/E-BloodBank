@@ -1,7 +1,7 @@
 // Firebase configuration
 // Works with Vercel hosting
 import { initializeApp, getApps } from 'firebase/app'
-import { getAuth, RecaptchaVerifier } from 'firebase/auth'
+import { getAuth, RecaptchaVerifier, GoogleAuthProvider } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -54,6 +54,12 @@ export const initializeRecaptcha = (elementId) => {
     }
   })
 }
+
+// Initialize Google Auth Provider
+export const googleProvider = new GoogleAuthProvider()
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+})
 
 export { auth }
 export default app
