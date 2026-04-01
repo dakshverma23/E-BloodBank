@@ -23,6 +23,7 @@ except ImportError:
         return val
 from datetime import timedelta
 from pathlib import Path
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -35,7 +36,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-!#%x*v0p8t$-qi^cr8@cx!rfc6^^yhxsjp9k0n#lpdhlf*+1*c')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', cast=bool, default=True)
+# Make DEBUG casting robust so unusual values like "warn" don't crash startup.
+try:
+    DEBUG = config('DEBUG', cast=bool, default=True)
+except ValueError:
+    raw_debug = os.environ.get('DEBUG', '')
+    if isinstance(raw_debug, str) and raw_debug:
+        DEBUG = raw_debug.lower() in ('1', 'true', 'yes', 'on', 'debug')
+    else:
+        DEBUG = bool(raw_debug)
 
 # ALLOWED_HOSTS - can be set via environment variable (comma-separated)
 # Default includes localhost for development
@@ -47,7 +56,6 @@ ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_str.split(',') if h.strip()]
 if not any('onrender.com' in host for host in ALLOWED_HOSTS):
     ALLOWED_HOSTS.append('e-bloodbank.onrender.com')
     # Allow any onrender.com subdomain
-    import os
     if os.environ.get('RENDER'):
         # On Render, allow the service domain
         render_service_name = os.environ.get('RENDER_SERVICE_NAME', 'e-bloodbank')
@@ -63,13 +71,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-     # Third party
+    # Third party
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'django_filters',
-     # Local apps
+    # Local apps
     'accounts.apps.AccountsConfig',
     'bloodbank',
     'inventory',
@@ -79,7 +87,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware', 
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -112,21 +120,33 @@ WSGI_APPLICATION = 'ebloodbank.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DATABASE_NAME', default='ebloodbank_db'),
-        'USER': config('DATABASE_USER', default='postgres'),
-        'PASSWORD': config('DATABASE_PASSWORD', default='daksh@postgres'),
-        'HOST': config('DATABASE_HOST', default='localhost'),
-        'PORT': config('DATABASE_PORT', default='5432'),
-        'OPTIONS': {
-            'connect_timeout': 10,
-        },
-        # Use psycopg3 (psycopg) adapter if available
-        'CONN_MAX_AGE': 600,
+# Parse DATABASE_URL from environment (provided by Render, Heroku, etc.)
+# Format: postgresql://user:password@host:port/dbname
+database_url = config('DATABASE_URL', default=None)
+
+if database_url:
+    # Use dj-database-url to parse the DATABASE_URL
+    DATABASES = {
+        'default': dj_database_url.parse(database_url, conn_max_age=600)
     }
-}
+    # Ensure connect_timeout is set
+    if 'OPTIONS' not in DATABASES['default']:
+        DATABASES['default']['OPTIONS'] = {}
+    DATABASES['default']['OPTIONS']['connect_timeout'] = 10
+    # For Render PostgreSQL, ensure SSL is enabled if not already set
+    # Render databases typically require SSL connections
+    if 'sslmode' not in DATABASES['default']['OPTIONS']:
+        # Check if we're on Render (they provide RENDER environment variable)
+        if os.environ.get('RENDER'):
+            DATABASES['default']['OPTIONS']['sslmode'] = 'require'
+else:
+    # Local development: use SQLite by default to avoid requiring PostgreSQL.
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -212,14 +232,33 @@ SIMPLE_JWT = {
 }
 
 
-
 CORS_ALLOWED_ORIGINS = [
     o.strip() for o in config(
         'CORS_ALLOWED_ORIGINS',
-        default='http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,https://e-blood-bank-pi.vercel.app'
+        default='http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175,http://127.0.0.1:5176,http://127.0.0.1:5177,http://localhost:3000,https://e-blood-bank-pi.vercel.app'
     ).split(',') if o.strip()
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+# In local development, Vite may choose a different port (e.g. 5174, 5177) if 5173 is busy.
+# Allow any localhost port when DEBUG=True to avoid "Network Error" from CORS blocking.
+if DEBUG:
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^http://localhost:\d+$",
+        r"^http://127\.0\.0\.1:\d+$",
+    ]
+
+# When frontend uses Vite proxy, requests reach Django with Referer from frontend origin.
+# Trust these origins for CSRF to avoid 403 on POST.
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS = [
+        'http://localhost:5173', 'http://127.0.0.1:5173',
+        'http://localhost:5174', 'http://127.0.0.1:5174',
+        'http://localhost:5175', 'http://127.0.0.1:5175',
+        'http://localhost:5176', 'http://127.0.0.1:5176',
+        'http://localhost:5177', 'http://127.0.0.1:5177',
+        'http://localhost:3000', 'http://127.0.0.1:3000',
+    ]
 
 # Email Configuration
 # Default to SMTP backend for real email sending
@@ -243,10 +282,6 @@ CACHES = {
     }
 }
 
-# Firebase Configuration
-# Get credentials from https://console.firebase.google.com/
-FIREBASE_PROJECT_ID = config('FIREBASE_PROJECT_ID', default='')
-FIREBASE_WEB_API_KEY = config('FIREBASE_WEB_API_KEY', default='')
-
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+

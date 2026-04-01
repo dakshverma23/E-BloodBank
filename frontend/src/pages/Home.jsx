@@ -1,146 +1,88 @@
 import { Link } from 'react-router-dom'
-import { Button, Card, Row, Col, Statistic } from 'antd'
-import { BankOutlined, HeartOutlined, CalendarOutlined, TeamOutlined, CheckCircleOutlined, MobileOutlined, GlobalOutlined } from '@ant-design/icons'
+import { Button, Card, Row, Col } from 'antd'
+import { BankOutlined, HeartOutlined, CalendarOutlined, TeamOutlined, CheckCircleOutlined, GlobalOutlined } from '@ant-design/icons'
+import { motion } from 'framer-motion'
+
+const fadeUp = {
+  initial: { opacity: 0, y: 16 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, amount: 0.25 },
+  transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+}
 
 export default function Home() {
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-red-600 via-red-500 to-red-600 text-white py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl font-bold mb-4">e-BloodBank</h1>
-          <p className="text-xl mb-8">An end-to-end Solution for managing Blood Transfusion Center or Storage Unit</p>
-          <div className="flex gap-4 justify-center">
-            <Link to="/signup">
-              <Button size="large" type="default" className="bg-white text-red-600 hover:bg-gray-100">
-                Get Started
-              </Button>
-            </Link>
-            <Link to="/login">
-              <Button size="large" type="default" className="bg-transparent border-white text-white hover:bg-white hover:text-red-600">
-                Login
-              </Button>
-            </Link>
+      <section className="relative overflow-hidden py-16 md:py-24">
+        <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          <div className="lg:col-span-7">
+            <motion.p className="lux-kicker mb-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+              Modern blood operations
+            </motion.p>
+            <motion.h1
+              className="lux-title text-5xl md:text-7xl leading-[1.03] mb-5"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+            >
+              e-BloodBank
+            </motion.h1>
+            <motion.p
+              style={{ color: 'rgba(255,255,255,.7)', maxWidth: 620 }}
+              className="text-lg md:text-xl mb-9"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+            >
+              A refined command center for blood banks and donors with real-time inventory, camps, appointments,
+              and requests in one fluid experience.
+            </motion.p>
+            <motion.div className="flex flex-wrap gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.18 }}>
+              <Link to="/signup"><Button type="primary" size="large">Get Started</Button></Link>
+              <Link to="/login"><Button size="large">Login</Button></Link>
+            </motion.div>
           </div>
+
+          <motion.div
+            className="lg:col-span-5 lux-surface p-6 md:p-7"
+            initial={{ opacity: 0, y: 24, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                [HeartOutlined, 'Live stock', 'Track blood units by group'],
+                [CalendarOutlined, 'Appointments', 'Schedule and approve quickly'],
+                [TeamOutlined, 'Camp ops', 'Run registrations at scale'],
+                [CheckCircleOutlined, 'Requests', 'Approve and reject with clarity'],
+              ].map(([Icon, title, text]) => (
+                <div key={title} style={{ border: '1px solid rgba(255,255,255,.12)', borderRadius: 14, padding: 14, background: 'rgba(255,255,255,.03)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, color: 'rgba(255,255,255,.85)' }}>
+                    <Icon />
+                    <strong>{title}</strong>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,.6)' }}>{text}</div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-16 bg-white">
+      <section className="py-14">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Why e-BloodBank?</h2>
+          <motion.h2 className="lux-title text-3xl md:text-4xl text-center mb-10" {...fadeUp}>Why e-BloodBank?</motion.h2>
           <Row gutter={[24, 24]}>
             <Col xs={24} md={8}>
-              <Card className="text-center h-full shadow-lg hover:shadow-xl transition-shadow">
-                <GlobalOutlined className="text-5xl text-red-500 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Web App</h3>
-                <p>Web based Blood Bank Management System on open source platform</p>
-              </Card>
+              <motion.div {...fadeUp}><Card className="text-center h-full"><GlobalOutlined className="text-5xl text-red-500 mb-4" /><h3 className="text-xl font-semibold mb-2">Web App</h3><p style={{ color: 'rgba(255,255,255,.68)' }}>Built for speed and reliability.</p></Card></motion.div>
             </Col>
             <Col xs={24} md={8}>
-              <Card className="text-center h-full shadow-lg hover:shadow-xl transition-shadow">
-                <CheckCircleOutlined className="text-5xl text-red-500 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Standards</h3>
-                <p>Adheres to NACO, Drug & Cosmetic Act & NABH Guidelines</p>
-              </Card>
+              <motion.div {...fadeUp}><Card className="text-center h-full"><CheckCircleOutlined className="text-5xl text-red-500 mb-4" /><h3 className="text-xl font-semibold mb-2">Standards</h3><p style={{ color: 'rgba(255,255,255,.68)' }}>Structured, compliant workflows.</p></Card></motion.div>
             </Col>
             <Col xs={24} md={8}>
-              <Card className="text-center h-full shadow-lg hover:shadow-xl transition-shadow">
-                <BankOutlined className="text-5xl text-red-500 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Dashboard</h3>
-                <p>Different type of dashboards for decision making</p>
-              </Card>
+              <motion.div {...fadeUp}><Card className="text-center h-full"><BankOutlined className="text-5xl text-red-500 mb-4" /><h3 className="text-xl font-semibold mb-2">Dashboards</h3><p style={{ color: 'rgba(255,255,255,.68)' }}>Decision-ready visual summaries.</p></Card></motion.div>
             </Col>
           </Row>
-        </div>
-      </section>
-
-      {/* Features of App */}
-      <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Features of App</h2>
-          <Row gutter={[24, 24]}>
-            <Col xs={24} sm={12} md={6}>
-              <Card className="text-center shadow-md">
-                <HeartOutlined className="text-4xl text-red-500 mb-3" />
-                <h4 className="font-semibold">Real-time Stock</h4>
-                <p className="text-sm text-gray-600">Blood stock availability</p>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Card className="text-center shadow-md">
-                <TeamOutlined className="text-4xl text-red-500 mb-3" />
-                <h4 className="font-semibold">Request Blood</h4>
-                <p className="text-sm text-gray-600">Request with a touch</p>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Card className="text-center shadow-md">
-                <CalendarOutlined className="text-4xl text-red-500 mb-3" />
-                <h4 className="font-semibold">Donation History</h4>
-                <p className="text-sm text-gray-600">Track your donations</p>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Card className="text-center shadow-md">
-                <BankOutlined className="text-4xl text-red-500 mb-3" />
-                <h4 className="font-semibold">Blood Camps</h4>
-                <p className="text-sm text-gray-600">Upcoming camps nearby</p>
-              </Card>
-            </Col>
-          </Row>
-        </div>
-      </section>
-
-      {/* Available Modules */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Available Modules</h2>
-          <Row gutter={[24, 24]}>
-            <Col xs={24} md={8}>
-              <Card title="Donor Management" className="shadow-lg">
-                <ul className="list-disc list-inside space-y-2 text-gray-700">
-                  <li>Pre-screening of Applicant</li>
-                  <li>Checking Registration parameters</li>
-                  <li>Capturing Vital parameters</li>
-                  <li>Capture Blood Group (From Analyser)</li>
-                </ul>
-              </Card>
-            </Col>
-            <Col xs={24} md={8}>
-              <Card title="Blood Camp Management" className="shadow-lg">
-                <ul className="list-disc list-inside space-y-2 text-gray-700">
-                  <li>Camp Registration</li>
-                  <li>Allocation Of Number</li>
-                  <li>Camp Donor Entry</li>
-                  <li>Generate e-Donor Card</li>
-                </ul>
-              </Card>
-            </Col>
-            <Col xs={24} md={8}>
-              <Card title="Blood Transfusion" className="shadow-lg">
-                <ul className="list-disc list-inside space-y-2 text-gray-700">
-                  <li>Transfusion Request</li>
-                  <li>Verification of Blood Sample</li>
-                  <li>Crossmatching</li>
-                  <li>Issue of Blood</li>
-                </ul>
-              </Card>
-            </Col>
-          </Row>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-red-600 to-red-500 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
-          <p className="text-lg mb-8">Join our community of blood banks and donors</p>
-          <Link to="/signup">
-            <Button size="large" type="default" className="bg-white text-red-600 hover:bg-gray-100">
-              Sign Up Now
-            </Button>
-          </Link>
         </div>
       </section>
     </div>

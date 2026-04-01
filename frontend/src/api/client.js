@@ -1,6 +1,8 @@
 import axios from 'axios'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+// In dev, always use proxy ('' = same origin) - ignores VITE_API_BASE_URL for reliability.
+// In prod build, use env or fallback to backend URL.
+const baseURL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000')
 
 export const api = axios.create({ baseURL })
 
@@ -25,12 +27,24 @@ api.interceptors.request.use((config) => {
   if (token && !isAuthOrSignup) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  // Log requests for debugging
+  console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${url}`)
   return config
 })
 
 api.interceptors.response.use(
-  (resp) => resp,
+  (resp) => {
+    console.log(`API Response: ${resp.status} ${resp.config.method?.toUpperCase()} ${resp.config.url}`)
+    return resp
+  },
   async (error) => {
+    console.error(`API Error: ${error.config?.method?.toUpperCase()} ${error.config?.baseURL}${error.config?.url}`, {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+      code: error.code
+    })
     const originalRequest = error.config
 
     // If error is not 401, or it's an auth endpoint, or we've already retried, reject

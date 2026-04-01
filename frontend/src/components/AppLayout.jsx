@@ -1,17 +1,15 @@
-import { Layout, Menu, Dropdown, Button, Switch } from 'antd'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { UserOutlined, LogoutOutlined, MenuOutlined, MoonOutlined, SunOutlined } from '@ant-design/icons'
+import { Layout, Menu, Dropdown, Button } from 'antd'
+import { Link, useLocation } from 'react-router-dom'
+import { UserOutlined, LogoutOutlined, MenuOutlined } from '@ant-design/icons'
 import useMe from '../hooks/useMe'
 import { isAuthenticated } from '../api/client'
-import { useTheme } from '../contexts/ThemeContext'
+import { motion } from 'framer-motion'
 const { Header, Content } = Layout
 
 export default function AppLayout({ children }) {
   const { pathname } = useLocation()
-  const navigate = useNavigate()
   const { me, loading } = useMe()
   const authenticated = isAuthenticated()
-  const { isDarkMode, toggleTheme, colors } = useTheme()
 
   const menuItems = authenticated && !loading ? (
     me?.user_type === 'bloodbank' ? [
@@ -53,36 +51,36 @@ export default function AppLayout({ children }) {
   ]
 
   return (
-    <Layout 
-      style={{ 
-        minHeight: '100vh', 
-        background: isDarkMode 
-          ? 'linear-gradient(to bottom, #0f172a, #1e293b)' 
-          : 'linear-gradient(to bottom, #f0f2f5, #ffffff)',
-        transition: 'background 0.3s ease'
+    <Layout
+      style={{
+        minHeight: '100vh',
+        background: 'transparent',
+        transition: 'background 0.3s ease',
       }}
     >
       <Header 
         style={{ 
-          background: colors.surface, 
+          background: 'rgba(255,255,255,.04)', 
+          backdropFilter: 'blur(12px)',
           padding: '0 24px', 
-          boxShadow: `0 2px 8px ${colors.shadow}`, 
+          boxShadow: '0 10px 35px rgba(0,0,0,.28)', 
           position: 'sticky', 
           top: 0, 
           zIndex: 1000,
-          borderBottom: `1px solid ${colors.border}`,
+          borderBottom: '1px solid rgba(255,255,255,.12)',
           transition: 'all 0.3s ease'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-            <Link 
-              to="/" 
-              style={{ 
-                fontSize: '24px', 
-                fontWeight: 'bold', 
-                color: isDarkMode ? '#f87171' : '#dc2626', 
+            <Link
+              to="/"
+              style={{
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: 'rgba(255,255,255,.92)',
                 textDecoration: 'none',
+                fontFamily: '"Fraunces", serif',
                 transition: 'color 0.3s ease'
               }}
             >
@@ -97,38 +95,28 @@ export default function AppLayout({ children }) {
                 flex: 1, 
                 lineHeight: '64px',
                 background: 'transparent',
-                color: colors.text,
+                color: 'rgba(255,255,255,.86)',
                 transition: 'all 0.3s ease'
               }}
-              theme={isDarkMode ? 'dark' : 'light'}
+              theme="light"
             />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            {/* Theme Toggle */}
-            <Switch
-              checked={isDarkMode}
-              onChange={toggleTheme}
-              checkedChildren={<MoonOutlined />}
-              unCheckedChildren={<SunOutlined />}
-              style={{
-                background: isDarkMode ? colors.primary : '#d9d9d9'
-              }}
-            />
             {authenticated && me && !loading && (
-              <span style={{ color: colors.textSecondary }}>{me.username}</span>
+              <span style={{ color: 'rgba(255,255,255,.68)' }}>{me.username}</span>
             )}
             {!authenticated && (
-              <Link to="/login" style={{ color: colors.textSecondary, marginRight: '8px' }}>Login</Link>
+              <Link to="/login" style={{ color: 'rgba(255,255,255,.7)', marginRight: '8px' }}>Login</Link>
             )}
             {authenticated && (
-              <Link to="/profile" style={{ display: 'flex', alignItems: 'center', color: colors.textSecondary, textDecoration: 'none' }}>
+              <Link to="/profile" style={{ display: 'flex', alignItems: 'center', color: 'rgba(255,255,255,.72)', textDecoration: 'none' }}>
                 <Button 
                   type="text" 
                   icon={<UserOutlined />} 
                   style={{ 
                     display: 'flex', 
                     alignItems: 'center',
-                    color: colors.textSecondary
+                    color: 'rgba(255,255,255,.72)'
                   }} 
                 />
               </Link>
@@ -140,7 +128,7 @@ export default function AppLayout({ children }) {
                 style={{ 
                   display: 'flex', 
                   alignItems: 'center',
-                  color: colors.textSecondary
+                  color: 'rgba(255,255,255,.72)'
                 }} 
               />
             </Dropdown>
@@ -148,7 +136,11 @@ export default function AppLayout({ children }) {
         </div>
       </Header>
       <Content style={{ padding: '12px', background: 'transparent', transition: 'background 0.3s ease' }}>
-        <div style={{ 
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          style={{ 
           background: 'transparent', 
           borderRadius: '0', 
           boxShadow: 'none', 
@@ -157,7 +149,7 @@ export default function AppLayout({ children }) {
           transition: 'background 0.3s ease'
         }}>
           {children}
-        </div>
+        </motion.div>
       </Content>
     </Layout>
   )

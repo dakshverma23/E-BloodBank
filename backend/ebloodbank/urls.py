@@ -42,6 +42,7 @@ def health(_request):
 urlpatterns = [
     path('', index, name='index'),
     path('health/', health, name='health'),
+    path('api/health/', health, name='api_health'),  # For frontend proxy connection test
     path('admin/', admin.site.urls),
     # API routes
     path('api/accounts/', include('accounts.urls')),
