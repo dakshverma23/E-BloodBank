@@ -6,7 +6,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from bloodbank.models import BloodBank
 from .models import User, UserProfile
 from .serializers import UserSerializer, UserProfileSerializer, MeSerializer
-from .firebase_auth import verify_firebase_token, is_firebase_verified, clear_firebase_verification
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -24,88 +23,9 @@ class SignupView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        # Check OTP verification
+        # Basic contact details
         email = request.data.get('email')
         phone = request.data.get('phone')
-        otp_verified = request.data.get('otp_verified', False)
-        
-        # Require OTP verification
-        if not otp_verified:
-            # Check if OTP was verified via the verify endpoint
-            if email:
-                from .models import OTP
-                # Check if there's a verified OTP for this email
-                verified_otp = OTP.objects.filter(
-                    email=email.strip().lower(),
-                    is_verified=True,
-                    otp_type='email'
-                ).order_by('-created_at').first()
-                
-                if not verified_otp:
-                    return Response(
-                        {'error': 'Please verify your email with OTP before signing up'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-            elif phone:
-                from .models import OTP
-                phone_normalized = ''.join(filter(str.isdigit, phone.strip()))
-                # Check if there's a verified OTP for this phone
-                verified_otp = OTP.objects.filter(
-                    phone=phone_normalized,
-                    is_verified=True,
-                    otp_type='phone'
-                ).order_by('-created_at').first()
-                
-                if not verified_otp:
-                    return Response(
-                        {'error': 'Please verify your phone with OTP before signing up'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-        
-        # Legacy Firebase token support (optional)
-        firebase_token = request.data.get('firebase_token')
-        
-        # Verify Firebase token if provided
-        if firebase_token:
-            try:
-                firebase_user = verify_firebase_token(firebase_token)
-                if firebase_user:
-                    email_from_firebase = firebase_user.get('email', '').strip().lower()
-                    phone_from_firebase = firebase_user.get('phone_number', '')
-                    
-                    # Verify email matches if provided
-                    if email:
-                        email_normalized = email.strip().lower()
-                        if email_normalized != email_from_firebase:
-                            return Response(
-                                {'email': ['Email does not match Firebase account']},
-                                status=status.HTTP_400_BAD_REQUEST
-                            )
-                        # Store Firebase verification
-                        is_firebase_verified(email_normalized, store=True)
-                    
-                    # Verify phone matches if provided
-                    if phone and phone_from_firebase:
-                        phone_normalized = ''.join(filter(str.isdigit, phone.strip()))
-                        phone_firebase_normalized = ''.join(filter(str.isdigit, phone_from_firebase))
-                        if phone_normalized != phone_firebase_normalized:
-                            return Response(
-                                {'phone': ['Phone number does not match Firebase account']},
-                                status=status.HTTP_400_BAD_REQUEST
-                            )
-            except Exception as e:
-                return Response(
-                    {'error': [f'Firebase verification failed: {str(e)}']},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        elif email:
-            # If no Firebase token but email provided, check if email is verified
-            # If not verified via Firebase, allow signup anyway (backend will validate email format)
-            email_normalized = email.strip().lower()
-            if not is_firebase_verified(email_normalized):
-                # Email verification via Firebase is optional - backend will validate email format
-                # User will be marked as verified since we're trusting the email input
-                pass
         
         # Create a mutable copy of request data
         data = request.data.copy()
@@ -136,37 +56,38 @@ class SignupView(APIView):
             user.is_verified = True
             user.save()
             
-            # Clear Firebase verification after successful signup
-            if email:
-                clear_firebase_verification(email)
+            from accounts.models import UserProfile
+            from django.utils.dateparse import parse_date
             
-            # If donor user, create linked Donor profile and UserProfile
+            # Create/update UserProfile for ALL user types (donor, bloodbank, admin)
+            profile, _ = UserProfile.objects.get_or_create(user=user)
+            
+            # Update profile fields if provided in request
+            profile_updated = False
+            if request.data.get('date_of_birth'):
+                parsed_date = parse_date(request.data.get('date_of_birth'))
+                if parsed_date:
+                    profile.date_of_birth = parsed_date
+                    profile_updated = True
+            if request.data.get('address'):
+                profile.address = request.data.get('address')
+                profile_updated = True
+            if request.data.get('city'):
+                profile.city = request.data.get('city')
+                profile_updated = True
+            if request.data.get('state'):
+                profile.state = request.data.get('state')
+                profile_updated = True
+            if request.data.get('pincode'):
+                profile.pincode = request.data.get('pincode')
+                profile_updated = True
+            if profile_updated:
+                profile.save()
+            
+            # If donor user, create linked Donor profile
             if user.user_type == 'donor':
                 from donors.models import Donor
-                from accounts.models import UserProfile
                 from datetime import date
-                from django.utils.dateparse import parse_date
-                
-                # Update or create UserProfile
-                profile, _ = UserProfile.objects.get_or_create(user=user, defaults={
-                    'date_of_birth': parse_date(request.data.get('date_of_birth')) if request.data.get('date_of_birth') else None,
-                    'address': request.data.get('address') or '',
-                    'city': request.data.get('city') or '',
-                    'state': request.data.get('state') or '',
-                    'pincode': request.data.get('pincode') or '',
-                })
-                # Update profile if data provided
-                if request.data.get('date_of_birth'):
-                    profile.date_of_birth = parse_date(request.data.get('date_of_birth'))
-                if request.data.get('address'):
-                    profile.address = request.data.get('address')
-                if request.data.get('city'):
-                    profile.city = request.data.get('city')
-                if request.data.get('state'):
-                    profile.state = request.data.get('state')
-                if request.data.get('pincode'):
-                    profile.pincode = request.data.get('pincode')
-                profile.save()
                 
                 # Create Donor profile
                 donor_date_of_birth = parse_date(request.data.get('date_of_birth')) if request.data.get('date_of_birth') else date(2000, 1, 1)
@@ -194,7 +115,7 @@ class SignupView(APIView):
                 }
                 Donor.objects.get_or_create(user=user, defaults=donor_payload)
             
-            # If bloodbank user, create linked BloodBank profile if fields provided
+            # If bloodbank user, create linked BloodBank profile
             if user.user_type == 'bloodbank':
                 bb_payload = {
                     'user': user,
@@ -212,6 +133,13 @@ class SignupView(APIView):
                     'is_operational': True,
                 }
                 BloodBank.objects.get_or_create(user=user, defaults=bb_payload)
+            
+            # Refresh user from database to get updated profile and external_id (from signal)
+            user.refresh_from_db()
+            # Refresh profile relationship
+            if hasattr(user, '_profile_cache'):
+                delattr(user, '_profile_cache')
+            
             # Auto-login return tokens to simplify frontend
             refresh = RefreshToken.for_user(user)
             data = UserSerializer(user).data
